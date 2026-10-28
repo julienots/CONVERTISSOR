@@ -78,7 +78,7 @@ object YouTube {
         val streams = info.audioStreams.filter { it.isUrl && it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP }
         if (streams.isEmpty()) throw IOException("Aucun flux audio téléchargeable pour ce lien")
         // Piste originale de préférence, puis meilleur débit (M4A en priorité, plus compatible)
-        val original = streams.filter { it.audioTrackType == null || it.audioTrackType.name == "ORIGINAL" }.ifEmpty { streams }
+        val original = streams.filter { it.audioTrackType == null || it.audioTrackType?.name == "ORIGINAL" }.ifEmpty { streams }
         return original.maxWith(compareBy<AudioStream>({ it.averageBitrate }, { if (it.format == MediaFormat.M4A) 1 else 0 }))
     }
 
