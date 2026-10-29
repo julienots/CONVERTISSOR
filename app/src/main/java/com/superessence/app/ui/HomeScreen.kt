@@ -79,7 +79,7 @@ fun HomeScreen(open: (String) -> Unit) {
         item(span = { GridItemSpan(2) }) { Header() }
         if (incoming.isNotEmpty()) {
             item(span = { GridItemSpan(2) }) {
-                Section("${incoming.size} fichier(s) partagé(s) avec SuperEssence") {
+                Section("${incoming.size} fichier(s) partagé(s) avec Fluxo") {
                     Hint("Que veux-tu en faire ?")
                     Row {
                         listOf("transfer" to "Envoyer", "convert" to "Convertir", "compress" to "Compresser").forEach { (r, l) ->
@@ -118,13 +118,13 @@ private fun Header() {
     ) {
         Image(
             painterResource(R.drawable.app_logo),
-            contentDescription = "Logo SuperEssence",
+            contentDescription = "Logo Fluxo",
             modifier = Modifier
                 .size(120.dp)
                 .clip(RoundedCornerShape(28.dp)),
         )
         Spacer(Modifier.height(10.dp))
-        Text("SuperEssence", fontSize = 28.sp, fontWeight = FontWeight.Black, color = SE.Text)
+        Text("Fluxo", fontSize = 28.sp, fontWeight = FontWeight.Black, color = SE.Text)
         Text("Transfère. Convertis. Compresse.", color = SE.Cyan, fontSize = 14.sp)
     }
 }

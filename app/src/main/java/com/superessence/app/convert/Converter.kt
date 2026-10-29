@@ -22,7 +22,7 @@ object Converter {
         // Cas « tous les fichiers en un seul résultat »
         when {
             target.id == "zip" -> {
-                val zipName = if (uris.size == 1) Storage.baseName(names[0]) + ".zip" else "SuperEssence_${stamp()}.zip"
+                val zipName = if (uris.size == 1) Storage.baseName(names[0]) + ".zip" else "Fluxo_${stamp()}.zip"
                 val total = uris.sumOf { Storage.size(ctx, it).coerceAtLeast(0) }.coerceAtLeast(1)
                 saved += Archives.zip(ctx, uris, zipName) { i, bytes ->
                     p.update(bytes.toFloat() / total, "Compression de ${names[i]}…")

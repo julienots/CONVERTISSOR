@@ -70,11 +70,11 @@ object Transfer {
     }.getOrDefault(emptyList())
 
     /** Contenu du QR code affiché par le récepteur. */
-    fun qrPayload(ctx: Context, host: String) = "superessence://$host:$PORT/" + Uri.encode(deviceName(ctx))
+    fun qrPayload(ctx: Context, host: String) = "fluxo://$host:$PORT/" + Uri.encode(deviceName(ctx))
 
     fun parseQr(text: String): Peer? {
-        if (!text.startsWith("superessence://")) return null
-        val rest = text.removePrefix("superessence://")
+        if (!text.startsWith("fluxo://")) return null
+        val rest = text.removePrefix("fluxo://")
         val hostPort = rest.substringBefore('/')
         val name = Uri.decode(rest.substringAfter('/', "Appareil"))
         val host = hostPort.substringBefore(':')
@@ -101,7 +101,7 @@ object Transfer {
         }
     }
 
-    /** Cherche les appareils SuperEssence en mode réception sur le réseau local (~4 s). */
+    /** Cherche les appareils Fluxo en mode réception sur le réseau local (~4 s). */
     suspend fun discover(onPeer: (Peer) -> Unit) = withContext(Dispatchers.IO) {
         val mine = localAddresses().toSet()
         val found = HashSet<String>()

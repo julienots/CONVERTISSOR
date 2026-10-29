@@ -98,7 +98,7 @@ class TransferService : Service() {
                 }
             }
             ACTION_HOTSPOT_START -> {
-                goForeground("Point d'accès SuperEssence actif")
+                goForeground("Point d'accès Fluxo actif")
                 startHotspot()
             }
             ACTION_HOTSPOT_STOP -> {
@@ -213,7 +213,7 @@ class TransferService : Service() {
                     Transfer.ui.update { it.copy(received = (listOf(saved) + it.received).take(100)) }
                 }
                 DataOutputStream(s.getOutputStream()).apply { writeInt(1); flush() }
-                Transfer.log("✅ $count fichier(s) reçus de $sender en ${meter.elapsedText()} → Téléchargements/SuperEssence/Reçus")
+                Transfer.log("✅ $count fichier(s) reçus de $sender en ${meter.elapsedText()} → Téléchargements/Fluxo/Reçus")
             } catch (e: Throwable) {
                 Transfer.log("❌ Réception échouée : ${e.message ?: e.javaClass.simpleName}")
             } finally {
@@ -318,10 +318,10 @@ class TransferService : Service() {
     private fun hotspotCredentials(r: WifiManager.LocalOnlyHotspotReservation): Pair<String, String> =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val c = r.softApConfiguration
-            (c.ssid ?: "SuperEssence") to (c.passphrase ?: "")
+            (c.ssid ?: "Fluxo") to (c.passphrase ?: "")
         } else {
             val c = r.wifiConfiguration
-            (c?.SSID ?: "SuperEssence") to (c?.preSharedKey ?: "")
+            (c?.SSID ?: "Fluxo") to (c?.preSharedKey ?: "")
         }
 
     private fun stopHotspot() {
@@ -352,7 +352,7 @@ class TransferService : Service() {
         )
         return NotificationCompat.Builder(this, SuperEssenceApp.CHANNEL_TRANSFER)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle("SuperEssence — Transfert")
+            .setContentTitle("Fluxo — Transfert")
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -383,17 +383,17 @@ class TransferService : Service() {
         if (wifiLock == null) {
             @Suppress("DEPRECATION")
             val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) WifiManager.WIFI_MODE_FULL_LOW_LATENCY else WifiManager.WIFI_MODE_FULL_HIGH_PERF
-            wifiLock = wm.createWifiLock(mode, "superessence:transfer").apply { setReferenceCounted(false); acquire() }
+            wifiLock = wm.createWifiLock(mode, "fluxo:transfer").apply { setReferenceCounted(false); acquire() }
         }
         if (multicastLock == null) {
-            multicastLock = wm.createMulticastLock("superessence:discovery").apply { setReferenceCounted(false); acquire() }
+            multicastLock = wm.createMulticastLock("fluxo:discovery").apply { setReferenceCounted(false); acquire() }
         }
     }
 
     private fun acquireWake() {
         if (wakeLock == null) {
             wakeLock = getSystemService(PowerManager::class.java)
-                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "superessence:transfer")
+                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "fluxo:transfer")
                 .apply { setReferenceCounted(false) }
         }
         wakeLock?.acquire(3 * 60 * 60 * 1000L)

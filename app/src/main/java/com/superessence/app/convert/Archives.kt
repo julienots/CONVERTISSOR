@@ -48,7 +48,7 @@ object Archives {
         return target.finish()
     }
 
-    /** Extrait une archive (zip, xapk, 7z, rar, tar, gz…) dans Téléchargements/SuperEssence/<nom>. */
+    /** Extrait une archive (zip, xapk, 7z, rar, tar, gz…) dans Téléchargements/Fluxo/<nom>. */
     fun extract(ctx: Context, uri: Uri, onFile: (String) -> Unit): List<SavedFile> {
         val name = Storage.displayName(ctx, uri)
         val folder = Storage.baseName(name).removeSuffix(".tar")

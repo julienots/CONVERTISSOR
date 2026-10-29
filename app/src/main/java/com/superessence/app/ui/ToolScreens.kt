@@ -158,7 +158,7 @@ fun ApkScreen(onBack: () -> Unit) {
 
     fun install(block: () -> Unit) {
         if (!ApkTools.canInstall(ctx)) {
-            Toast.makeText(ctx, "Autorise SuperEssence à installer des applications, puis réessaie", Toast.LENGTH_LONG).show()
+            Toast.makeText(ctx, "Autorise Fluxo à installer des applications, puis réessaie", Toast.LENGTH_LONG).show()
             ApkTools.openInstallPermission(ctx)
         } else {
             block()
@@ -271,7 +271,7 @@ fun YoutubeScreen(onBack: () -> Unit) {
                 },
             )
             BigButton("Analyser le lien", Icons.Filled.Search, enabled = !busy) { analyze() }
-            Hint("Astuce : dans YouTube, « Partager » → SuperEssence.")
+            Hint("Astuce : dans YouTube, « Partager » → Fluxo.")
         }
         val v = video
         if (v != null) {
@@ -434,12 +434,12 @@ fun AboutScreen(onBack: () -> Unit) {
             )
         }
         Section {
-            Text("SuperEssence", fontSize = 24.sp, fontWeight = FontWeight.Black)
+            Text("Fluxo", fontSize = 24.sp, fontWeight = FontWeight.Black)
             Text("Version ${BuildConfig.VERSION_NAME}", color = SE.Muted)
             Text("Créé par SuperEssence Studio", color = SE.Cyan, fontWeight = FontWeight.SemiBold)
         }
         Section("Ce que fait l'application") {
-            Hint("• Transfert ultra-rapide en Wi‑Fi local entre appareils SuperEssence, sans limite de taille")
+            Hint("• Transfert ultra-rapide en Wi‑Fi local entre appareils Fluxo, sans limite de taille")
             Hint("• Conversion audio, vidéo, image, PDF, texte, Word, archives")
             Hint("• XAPK / APKS / APKM → APK unique")
             Hint("• Liens YouTube → MP3 / M4A / MP4")
@@ -448,7 +448,7 @@ fun AboutScreen(onBack: () -> Unit) {
             Hint("• Compresseur de fichiers")
         }
         Section("Où sont mes fichiers ?") {
-            Hint("Tous les résultats sont dans Téléchargements/SuperEssence (et Téléchargements/SuperEssence/Reçus pour les transferts).")
+            Hint("Tous les résultats sont dans Téléchargements/Fluxo (et Téléchargements/Fluxo/Reçus pour les transferts).")
         }
         Section("Licences") {
             Hint("FFmpeg (LGPL/GPL), Vosk (Apache 2.0), NewPipe Extractor (GPL v3), ARSCLib (Apache 2.0), ZXing (Apache 2.0), PdfBox-Android (Apache 2.0), Apache Commons Compress, junrar.")

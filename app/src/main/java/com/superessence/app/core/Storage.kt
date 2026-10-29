@@ -16,7 +16,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 
-/** Un fichier enregistré dans Téléchargements/SuperEssence. */
+/** Un fichier enregistré dans Téléchargements/Fluxo. */
 data class SavedFile(val name: String, val uri: Uri, val size: Long, val mime: String)
 
 /** Sortie en cours d'écriture : appeler [finish] une fois le contenu écrit. */
@@ -66,7 +66,7 @@ class CountingStream(private val out: OutputStream) : OutputStream() {
 }
 
 object Storage {
-    const val FOLDER = "SuperEssence"
+    const val FOLDER = "Fluxo"
 
     fun workDir(ctx: Context, prefix: String): File =
         File(ctx.cacheDir, "work/$prefix-${System.nanoTime()}").apply { mkdirs() }
@@ -118,7 +118,7 @@ object Storage {
     fun sanitize(name: String): String =
         name.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]"), "_").trim().take(150).ifBlank { "fichier" }
 
-    /** Crée un fichier dans Téléchargements/SuperEssence[/sousDossier]. */
+    /** Crée un fichier dans Téléchargements/Fluxo[/sousDossier]. */
     fun openOutput(ctx: Context, rawName: String, subFolder: String? = null): OutputTarget {
         val name = sanitize(rawName)
         val mime = mimeOf(name)
@@ -167,7 +167,7 @@ object Storage {
         return total
     }
 
-    /** Copie un fichier local vers Téléchargements/SuperEssence. */
+    /** Copie un fichier local vers Téléchargements/Fluxo. */
     fun save(ctx: Context, file: File, name: String = file.name, subFolder: String? = null): SavedFile {
         val target = openOutput(ctx, name, subFolder)
         try {

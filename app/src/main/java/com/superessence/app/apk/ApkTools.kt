@@ -110,7 +110,7 @@ object ApkTools {
         }
     }
 
-    /** Extrait chaque APK (et OBB) du paquet dans Téléchargements/SuperEssence/<nom>. */
+    /** Extrait chaque APK (et OBB) du paquet dans Téléchargements/Fluxo/<nom>. */
     fun extractAll(ctx: Context, pkg: AppPackage): List<SavedFile> {
         val out = ArrayList<SavedFile>()
         ZipFile(pkg.file).use { zip ->

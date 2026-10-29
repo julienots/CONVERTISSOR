@@ -1,14 +1,14 @@
-<p align="center"><img src="docs/icon.png" width="160" alt="SuperEssence"></p>
+<p align="center"><img src="docs/icon.png" width="160" alt="Fluxo"></p>
 
-# SuperEssence
+# Fluxo
 
 Application Android tout-en-un créée par **SuperEssence Studio**.
 
 ## Télécharger l'APK
 
-Va dans l'onglet **Releases** du dépôt et télécharge `SuperEssence.apk` (dernière version).
+Va dans l'onglet **Releases** du dépôt et télécharge `Fluxo.apk` (dernière version).
 L'APK est compilé automatiquement par GitHub Actions à chaque push (onglet **Actions**,
-artefact `SuperEssence-apk`). Android 8.0 ou plus est requis.
+artefact `Fluxo-apk`). Android 8.0 ou plus est requis.
 
 ## Fonctions
 
@@ -22,7 +22,7 @@ artefact `SuperEssence-apk`). Android 8.0 ou plus est requis.
 | **Transcription** | Vidéo/audio → texte `.txt` + sous-titres `.srt`, hors connexion (Vosk). Modèle téléchargé une fois par langue. |
 | **Compresseur** | Images, vidéos, audio optimisés, ou tout regrouper dans un ZIP. |
 
-Tous les résultats sont enregistrés dans **Téléchargements/SuperEssence**.
+Tous les résultats sont enregistrés dans **Téléchargements/Fluxo**.
 
 ## Signature (optionnel, recommandé)
 

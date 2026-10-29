@@ -40,22 +40,22 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
           mkdir -p out
-          cp app/build/outputs/apk/release/*.apk out/SuperEssence.apk
+          cp app/build/outputs/apk/release/*.apk out/Fluxo.apk
           ls -la out
 
       - uses: actions/upload-artifact@v4
         with:
-          name: SuperEssence-apk
-          path: out/SuperEssence.apk
+          name: Fluxo-apk
+          path: out/Fluxo.apk
 
       - name: Publier la release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: SuperEssence v1.0.${{ github.run_number }}
+          name: Fluxo v1.0.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           make_latest: true
-          files: out/SuperEssence.apk
+          files: out/Fluxo.apk
           body: |
-            📲 Télécharge **SuperEssence.apk** ci-dessous et installe-le sur ton téléphone Android (8.0 ou plus).
+            📲 Télécharge **Fluxo.apk** ci-dessous et installe-le sur ton téléphone Android (8.0 ou plus).
             Créé par SuperEssence Studio.

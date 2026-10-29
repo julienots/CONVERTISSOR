@@ -105,7 +105,7 @@ fun TransferScreen(onBack: () -> Unit) {
             Tab(tab == 0, { tab = 0 }, text = { Text("Envoyer") }, icon = { Icon(Icons.Filled.Send, null) })
             Tab(tab == 1, { tab = 1 }, text = { Text("Recevoir") }, icon = { Icon(Icons.Filled.Download, null) })
         }
-        Hint("Installe SuperEssence sur les deux appareils et connecte-les au même Wi‑Fi (ou au point d'accès créé par le récepteur). Aucune limite de taille : 2 Go et plus.")
+        Hint("Installe Fluxo sur les deux appareils et connecte-les au même Wi‑Fi (ou au point d'accès créé par le récepteur). Aucune limite de taille : 2 Go et plus.")
         CurrentTransfer()
         if (tab == 0) SendTab() else ReceiveTab()
         Events()
@@ -173,7 +173,7 @@ private fun SendTab() {
         }
     }
     Section("2. Choisir le destinataire") {
-        Hint("Sur l'autre appareil : SuperEssence → Transfert → Recevoir.")
+        Hint("Sur l'autre appareil : Fluxo → Transfert → Recevoir.")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { search() }, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Filled.Search, null); Spacer(Modifier.width(6.dp)); Text("Rechercher")
@@ -270,7 +270,7 @@ private fun ReceiveTab() {
     Section("Pas de Wi‑Fi ?") {
         val h = ui.hotspot
         if (h == null) {
-            Hint("Crée un point d'accès local : l'autre appareil s'y connecte (scan du QR code Wi‑Fi avec l'appareil photo), puis scanne le QR SuperEssence.")
+            Hint("Crée un point d'accès local : l'autre appareil s'y connecte (scan du QR code Wi‑Fi avec l'appareil photo), puis scanne le QR Fluxo.")
             OutlinedButton(onClick = {
                 val perm = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.NEARBY_WIFI_DEVICES else Manifest.permission.ACCESS_FINE_LOCATION
                 hotspotPerm.launch(perm)
@@ -287,7 +287,7 @@ private fun ReceiveTab() {
     }
 
     if (ui.received.isNotEmpty()) {
-        Section("Fichiers reçus (Téléchargements/SuperEssence/Reçus)") {
+        Section("Fichiers reçus (Téléchargements/Fluxo/Reçus)") {
             ui.received.take(30).forEach { f ->
                 Row(
                     Modifier
