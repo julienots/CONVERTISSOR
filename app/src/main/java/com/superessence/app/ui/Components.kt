@@ -1,6 +1,9 @@
 package com.superessence.app.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
+import android.widget.Toast
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,6 +50,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -233,6 +237,13 @@ fun JobPanel(key: String) {
                 }
             }
             if (s.files.size > 20) Hint("… et ${s.files.size - 20} autres fichiers")
+            if (s.text != null) {
+                Text(s.text.take(3000) + if (s.text.length > 3000) "…" else "", fontSize = 14.sp)
+                TextButton(onClick = {
+                    ctx.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Fluxo", s.text))
+                    Toast.makeText(ctx, "Texte copié", Toast.LENGTH_SHORT).show()
+                }) { Text("Copier le texte") }
+            }
             Row {
                 if (s.files.size > 1) TextButton(onClick = { Storage.shareFiles(ctx, s.files) }) { Text("Tout partager") }
                 TextButton(onClick = { Jobs.reset(key) }) { Text("OK") }
@@ -243,6 +254,15 @@ fun JobPanel(key: String) {
             TextButton(onClick = { Jobs.reset(key) }) { Text("OK") }
         }
     }
+}
+
+/** Toutes les tâches d'un groupe : plusieurs conversions peuvent tourner en même temps. */
+@Composable
+fun JobGroup(group: String) {
+    val keys by Jobs.keys(group).collectAsState()
+    if (keys.isEmpty()) return
+    if (keys.size > 1) Hint("${keys.size} tâches · tu peux quitter l'app, elles continuent en arrière-plan.")
+    keys.forEach { key(it) { JobPanel(it) } }
 }
 
 @Composable

@@ -7,7 +7,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
+import com.superessence.app.SuperEssenceApp
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 import java.util.concurrent.ConcurrentHashMap
 
 sealed interface JobState {
@@ -34,17 +38,41 @@ object Jobs {
 
     private fun flow(key: String) = states.getOrPut(key) { MutableStateFlow(JobState.Idle) }
 
-    fun start(key: String, block: suspend Progress.() -> JobState.Done) {
+    private val groups = ConcurrentHashMap<String, MutableStateFlow<List<String>>>()
+    private val counter = AtomicInteger(0)
+
+    private fun group(name: String) = groups.getOrPut(name) { MutableStateFlow(emptyList()) }
+
+    /** Clés des tâches d'un groupe (plusieurs conversions en même temps), la plus récente d'abord. */
+    fun keys(groupName: String): StateFlow<List<String>> = group(groupName)
+
+    /** Lance une nouvelle tâche en parallèle des autres du même groupe. */
+    fun startNew(groupName: String, label: String, block: suspend Progress.() -> JobState.Done): String {
+        val key = "$groupName#${counter.incrementAndGet()}"
+        group(groupName).update { listOf(key) + it }
+        start(key, label, block)
+        return key
+    }
+
+    fun start(key: String, label: String = "Conversion", block: suspend Progress.() -> JobState.Done) {
         running[key]?.cancel()
         val f = flow(key)
         f.value = JobState.Running(-1f, "Préparation…")
+        val app = SuperEssenceApp.instance
+        Background.begin(app, label)
         running[key] = scope.launch {
             try {
-                f.value = Progress(f).block()
+                val done = Progress(f).block()
+                f.value = done
+                Background.notifyDone(app, "$label : terminé")
             } catch (e: CancellationException) {
-                f.value = JobState.Failed("Annulé")
+                if (f.value is JobState.Running) f.value = JobState.Failed("Annulé")
             } catch (e: Throwable) {
                 f.value = JobState.Failed(e.message ?: e.javaClass.simpleName)
+                Background.notifyDone(app, "$label : échec")
+            } finally {
+                coroutineContext[Job]?.let { running.remove(key, it) }
+                Background.end(app)
             }
         }
     }
@@ -56,5 +84,10 @@ object Jobs {
     fun reset(key: String) {
         cancel(key)
         flow(key).value = JobState.Idle
+        val g = key.substringBefore('#', "")
+        if (g.isNotEmpty()) {
+            group(g).update { list -> list - key }
+            states.remove(key)
+        }
     }
 }

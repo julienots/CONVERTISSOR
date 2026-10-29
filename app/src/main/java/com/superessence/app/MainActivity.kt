@@ -58,6 +58,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        com.superessence.app.core.Background.visible = true
+    }
+
+    override fun onStop() {
+        com.superessence.app.core.Background.visible = false
+        super.onStop()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent)

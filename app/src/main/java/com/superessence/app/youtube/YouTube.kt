@@ -2,14 +2,14 @@ package com.superessence.app.youtube
 
 import android.content.Context
 import com.superessence.app.convert.FF
-import com.superessence.app.core.JobState
-import com.superessence.app.core.Progress
 import com.superessence.app.core.Storage
 import kotlinx.coroutines.ensureActive
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.NewPipe
+import org.schabi.newpipe.extractor.StreamingService
+import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
@@ -120,7 +120,11 @@ object YouTube {
         }
     }
 
-    suspend fun run(ctx: Context, video: VideoInfo, format: String, p: Progress): JobState.Done {
+    /** Télécharge + convertit, puis place le résultat dans [destDir]. Renvoie le fichier final. */
+    suspend fun produce(ctx: Context, video: VideoInfo, format: String, destDir: File, report: (Float, String) -> Unit): File {
+        val p = object {
+            fun update(f: Float, msg: String) = report(f, msg)
+        }
         val work = Storage.workDir(ctx, "yt")
         val base = Storage.sanitize(video.title)
         val dur = video.durationSec * 1000
@@ -174,10 +178,35 @@ object YouTube {
                     }
                 }
             }
-            val saved = Storage.save(ctx, out, "$base.$format")
-            return JobState.Done("« ${video.title} » enregistré dans Téléchargements/${Storage.FOLDER}", listOf(saved))
+            destDir.mkdirs()
+            val final = File(destDir, "$base.$format")
+            if (!out.renameTo(final)) {
+                out.copyTo(final, overwrite = true)
+            }
+            return final
         } finally {
             work.deleteRecursively()
         }
+    }
+
+    /** Développe une playlist en liste de liens de vidéos (sinon renvoie le lien tel quel). */
+    fun expand(url: String): List<String> {
+        init()
+        return runCatching {
+            val service = NewPipe.getServiceByUrl(url)
+            if (service.getLinkTypeByUrl(url) == StreamingService.LinkType.PLAYLIST) {
+                val info = PlaylistInfo.getInfo(service, url)
+                val items = ArrayList(info.relatedItems.map { it.url })
+                var page = info.nextPage
+                while (info.hasNextPage() && page != null && items.size < 500) {
+                    val more = PlaylistInfo.getMoreItems(service, url, page)
+                    items += more.items.map { it.url }
+                    page = if (more.hasNextPage()) more.nextPage else null
+                }
+                items
+            } else {
+                listOf(url)
+            }
+        }.getOrDefault(listOf(url))
     }
 }

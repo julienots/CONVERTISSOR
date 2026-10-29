@@ -1,6 +1,20 @@
 package com.superessence.app.ui
 
-import android.content.ClipData
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.text.style.TextOverflow
 import android.content.ClipboardManager
 import android.content.Context
 import android.net.Uri
@@ -62,8 +76,9 @@ import com.superessence.app.core.JobState
 import com.superessence.app.core.Jobs
 import com.superessence.app.core.Storage
 import com.superessence.app.transcribe.Transcriber
-import com.superessence.app.youtube.VideoInfo
-import com.superessence.app.youtube.YouTube
+import com.superessence.app.youtube.YtItem
+import com.superessence.app.youtube.YtQueue
+import com.superessence.app.youtube.YtStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 
@@ -84,7 +99,6 @@ fun ConvertScreen(onBack: () -> Unit, open: (String) -> Unit) {
         target = null
     }
     val kind = files.firstOrNull()?.let { kindOf(ctx, it) }
-    val busy = isBusy("convert")
 
     ToolScaffold("Convertir", onBack) {
         Section("Fichiers") {
@@ -99,20 +113,20 @@ fun ConvertScreen(onBack: () -> Unit, open: (String) -> Unit) {
                 ChoiceChips(Formats.targets(kind), target, { it.label }) { target = it }
                 val t = target
                 if (t != null) {
-                    BigButton("Convertir en ${t.label}", Icons.Filled.Transform, enabled = !busy) {
+                    BigButton("Convertir en ${t.label}", Icons.Filled.Transform) {
                         when (t.id) {
                             "transcribe" -> { Shared.handOff(listOf(files.first())); open("transcribe") }
                             "apk" -> { Shared.handOff(listOf(files.first())); open("apk") }
                             else -> {
                                 val list = files.toList()
-                                Jobs.start("convert") { Converter.run(ctx.applicationContext, list, kind, t, this) }
+                                Jobs.startNew("convert", "Conversion en ${t.label}") { Converter.run(ctx.applicationContext, list, kind, t, this) }
                             }
                         }
                     }
                 }
             }
         }
-        JobPanel("convert")
+        JobGroup("convert")
         Section("Conversions possibles") {
             Hint("• Vidéo → MP3, M4A, WAV, OGG, FLAC, OPUS, MP4, MKV, WEBM, AVI, MOV, GIF, images, texte")
             Hint("• Audio → MP3, M4A, WAV, OGG, FLAC, OPUS, texte")
@@ -222,71 +236,134 @@ fun ApkScreen(onBack: () -> Unit) {
 
 // ------------------------------------------------------------------ Lien → MP3
 
-private object YtUi {
-    val video = MutableStateFlow<VideoInfo?>(null)
-}
-
 @Composable
 fun YoutubeScreen(onBack: () -> Unit) {
     val ctx = LocalContext.current
     val shared by Shared.sharedText.collectAsState()
-    var url by rememberSaveable { mutableStateOf("") }
+    var text by rememberSaveable { mutableStateOf("") }
     var format by rememberSaveable { mutableStateOf("mp3") }
-    val video by YtUi.video.collectAsState()
-    val busy = isBusy("yt")
+    val items by YtQueue.items.collectAsState()
+    val autoSave by YtQueue.autoSave.collectAsState()
+    val notifPerm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
 
-    fun analyze() {
-        val u = url.trim()
-        if (!u.startsWith("http")) {
-            Toast.makeText(ctx, "Colle un lien valide", Toast.LENGTH_SHORT).show(); return
-        }
-        YtUi.video.value = null
-        Jobs.start("yt") {
-            update(-1f, "Analyse du lien…")
-            val v = YouTube.fetch(u)
-            YtUi.video.value = v
-            JobState.Done("Prêt : « ${v.title} »")
+    fun addAll() {
+        val n = YtQueue.add(ctx, text, format)
+        if (n == 0) {
+            Toast.makeText(ctx, "Colle au moins un lien valide", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(ctx, "$n lien(s) ajouté(s) — tu peux quitter l'app", Toast.LENGTH_SHORT).show()
+            text = ""
         }
     }
     LaunchedEffect(shared) {
         shared?.let { t ->
-            Regex("https?://\\S+").find(t)?.value?.let { url = it; analyze() }
+            text = (text.trim() + "\n" + YtQueue.parseLinks(t).joinToString("\n")).trim()
             Shared.sharedText.value = null
         }
     }
 
-    ToolScaffold("Lien → MP3", onBack) {
-        Section("Lien YouTube") {
+    ToolScaffold("Liens → MP3", onBack) {
+        Section("Liens YouTube") {
             OutlinedTextField(
-                value = url,
-                onValueChange = { url = it },
-                label = { Text("https://youtube.com/…") },
-                singleLine = true,
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Colle un ou plusieurs liens (un par ligne)") },
+                minLines = 3,
+                maxLines = 8,
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(onClick = {
                         val cm = ctx.getSystemService(ClipboardManager::class.java)
-                        cm.primaryClip?.getItemAt(0)?.text?.toString()?.let { url = it.trim() }
+                        cm.primaryClip?.getItemAt(0)?.text?.toString()?.let { text = (text.trim() + "\n" + it.trim()).trim() }
                     }) { Icon(Icons.Filled.ContentPaste, "Coller") }
                 },
             )
-            BigButton("Analyser le lien", Icons.Filled.Search, enabled = !busy) { analyze() }
-            Hint("Astuce : dans YouTube, « Partager » → Fluxo.")
-        }
-        val v = video
-        if (v != null) {
-            Section(v.title) {
-                Text(v.uploader, color = SE.Muted)
-                if (v.durationSec > 0) Text("Durée : %d:%02d".format(v.durationSec / 60, v.durationSec % 60), color = SE.Muted)
-                ChoiceChips(listOf("mp3", "m4a", "mp4"), format, { it.uppercase() }) { format = it }
-                BigButton("Télécharger en ${format.uppercase()}", Icons.Filled.Download, enabled = !busy) {
-                    val f = format
-                    Jobs.start("yt") { YouTube.run(ctx.applicationContext, v, f, this) }
+            val count = YtQueue.parseLinks(text).size
+            ChoiceChips(listOf("mp3", "m4a", "mp4"), format, { it.uppercase() }) { format = it }
+            BigButton(
+                if (count > 1) "Convertir les $count liens en ${format.uppercase()}" else "Convertir en ${format.uppercase()}",
+                Icons.Filled.Download, enabled = count > 0,
+            ) { addAll() }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Télécharger automatiquement")
+                    Hint("Sinon, appuie sur « Télécharger » à côté de chaque fichier prêt.")
                 }
+                Switch(checked = autoSave, onCheckedChange = { YtQueue.autoSave.value = it })
+            }
+            Hint("Les playlists sont acceptées. 3 liens sont traités en même temps, les autres attendent. Tu peux quitter l'app : ça continue et une notification te prévient.")
+        }
+        if (items.isNotEmpty()) {
+            val ready = items.count { it.status == YtStatus.READY }
+            Section("File (${items.size})") {
+                Row {
+                    if (ready > 1) TextButton(onClick = { YtQueue.saveAll(ctx) }) { Text("Tout télécharger ($ready)") }
+                    TextButton(onClick = { YtQueue.clearFinished() }) { Text("Effacer les terminés") }
+                }
+                items.asReversed().forEach { YtRow(it) }
             }
         }
-        JobPanel("yt")
         Hint("À utiliser uniquement pour des contenus dont tu as les droits (tes vidéos, contenus libres…).")
+    }
+}
+
+@Composable
+private fun YtRow(item: YtItem) {
+    val ctx = LocalContext.current
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(SE.SurfaceHi, RoundedCornerShape(14.dp))
+            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(item.title, maxLines = 2, overflow = TextOverflow.Ellipsis, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    item.format.uppercase() + " · " + when (item.status) {
+                        YtStatus.SAVED -> "Téléchargé dans Téléchargements/Fluxo"
+                        else -> item.message
+                    },
+                    color = if (item.status == YtStatus.FAILED) SE.Red else SE.Muted,
+                    fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            when (item.status) {
+                YtStatus.READY -> if (item.saving) {
+                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                } else {
+                    Button(
+                        onClick = { YtQueue.save(ctx, item) },
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Icon(Icons.Filled.Download, null, Modifier.size(18.dp))
+                        Text(" Télécharger", fontSize = 13.sp)
+                    }
+                }
+                YtStatus.SAVED -> item.saved?.let { f ->
+                    IconButton(onClick = { Storage.openFile(ctx, f) }) { Icon(Icons.Filled.PlayArrow, "Ouvrir", tint = SE.Green) }
+                    IconButton(onClick = { Storage.shareFiles(ctx, listOf(f)) }) { Icon(Icons.Filled.Share, "Partager", tint = SE.Cyan) }
+                }
+                YtStatus.FAILED -> IconButton(onClick = { YtQueue.retry(ctx, item) }) { Icon(Icons.Filled.Refresh, "Réessayer", tint = SE.Cyan) }
+                else -> Unit
+            }
+            IconButton(onClick = { YtQueue.remove(item) }) { Icon(Icons.Filled.Close, "Retirer", tint = SE.Muted) }
+        }
+        if (item.status == YtStatus.RUNNING || item.status == YtStatus.WAITING) {
+            if (item.progress < 0) {
+                LinearProgressIndicator(Modifier.fillMaxWidth().padding(end = 8.dp, top = 6.dp), color = SE.Cyan)
+            } else {
+                LinearProgressIndicator(
+                    progress = { item.progress },
+                    modifier = Modifier.fillMaxWidth().padding(end = 8.dp, top = 6.dp),
+                    color = SE.Cyan,
+                )
+            }
+        }
     }
 }
 
@@ -299,7 +376,6 @@ fun FramesScreen(onBack: () -> Unit) {
     var fps by rememberSaveable { mutableStateOf(1.0) }
     var format by rememberSaveable { mutableStateOf("jpg") }
     val pick = rememberPicker(false) { video = it.first() }
-    val busy = isBusy("frames")
     val rates = listOf(0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 0.0)
 
     ToolScaffold("Vidéo → Images", onBack) {
@@ -321,16 +397,16 @@ fun FramesScreen(onBack: () -> Unit) {
             if (fps == 0.0) Hint("« Toutes » extrait chaque image : une minute de vidéo ≈ 1 800 images.")
         }
         val v = video
-        BigButton("Extraire dans un ZIP", Icons.Filled.PhotoLibrary, enabled = v != null && !busy) {
+        BigButton("Extraire dans un ZIP", Icons.Filled.PhotoLibrary, enabled = v != null) {
             if (v != null) {
                 val r = fps; val f = format
-                Jobs.start("frames") {
+                Jobs.startNew("frames", "Vidéo → images") {
                     val saved = Media.framesToZip(ctx.applicationContext, v, r, f) { update(it, "Extraction des images…") }
                     JobState.Done("ZIP d'images créé", listOf(saved))
                 }
             }
         }
-        JobPanel("frames")
+        JobGroup("frames")
     }
 }
 
@@ -342,8 +418,6 @@ fun TranscribeScreen(onBack: () -> Unit) {
     var media by remember { mutableStateOf(Shared.takePending().firstOrNull()) }
     var lang by remember { mutableStateOf(Transcriber.languages.first()) }
     val pick = rememberPicker(false) { media = it.first() }
-    val busy = isBusy("stt")
-    val state by Jobs.state("stt").collectAsState()
 
     ToolScaffold("Transcription", onBack) {
         Section("Vidéo ou audio") {
@@ -359,23 +433,13 @@ fun TranscribeScreen(onBack: () -> Unit) {
             }
         }
         val m = media
-        BigButton("Transcrire en texte", Icons.Filled.Subtitles, enabled = m != null && !busy) {
+        BigButton("Transcrire en texte", Icons.Filled.Subtitles, enabled = m != null) {
             if (m != null) {
                 val l = lang
-                Jobs.start("stt") { Transcriber.run(ctx.applicationContext, m, l, this) }
+                Jobs.startNew("stt", "Transcription") { Transcriber.run(ctx.applicationContext, m, l, this) }
             }
         }
-        JobPanel("stt")
-        val s = state
-        if (s is JobState.Done && s.text != null) {
-            Section("Aperçu du texte") {
-                Text(s.text.take(3000) + if (s.text.length > 3000) "…" else "", fontSize = 14.sp)
-                TextButton(onClick = {
-                    ctx.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Transcription", s.text))
-                    Toast.makeText(ctx, "Texte copié", Toast.LENGTH_SHORT).show()
-                }) { Text("Copier le texte") }
-            }
-        }
+        JobGroup("stt")
         Hint("Fichiers créés : .txt (texte) et .srt (sous-titres avec horodatage).")
     }
 }
@@ -389,7 +453,6 @@ fun CompressScreen(onBack: () -> Unit) {
     var level by rememberSaveable { mutableStateOf(Level.MEDIUM) }
     var zipAll by rememberSaveable { mutableStateOf(false) }
     val pick = rememberPicker(true) { p -> files.addAll(p.filter { it !in files }) }
-    val busy = isBusy("compress")
 
     ToolScaffold("Compresseur", onBack) {
         Section("Fichiers") {
@@ -412,11 +475,11 @@ fun CompressScreen(onBack: () -> Unit) {
                 ChoiceChips(Level.entries.toList(), level, { it.label }) { level = it }
             }
         }
-        BigButton("Compresser", Icons.Filled.Compress, enabled = files.isNotEmpty() && !busy) {
+        BigButton("Compresser", Icons.Filled.Compress, enabled = files.isNotEmpty()) {
             val list = files.toList(); val l = level; val z = zipAll
-            Jobs.start("compress") { Compressor.run(ctx.applicationContext, list, l, z, this) }
+            Jobs.startNew("compress", "Compression") { Compressor.run(ctx.applicationContext, list, l, z, this) }
         }
-        JobPanel("compress")
+        JobGroup("compress")
     }
 }
 

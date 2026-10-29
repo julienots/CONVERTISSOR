@@ -10,12 +10,16 @@ class SuperEssenceApp : Application() {
         instance = this
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_TRANSFER, "Transferts", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(CHANNEL_TRANSFER, "Tâches en cours", NotificationManager.IMPORTANCE_LOW)
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_DONE, "Tâches terminées", NotificationManager.IMPORTANCE_DEFAULT)
         )
     }
 
     companion object {
         const val CHANNEL_TRANSFER = "transfer"
+        const val CHANNEL_DONE = "done"
         lateinit var instance: SuperEssenceApp
             private set
     }
