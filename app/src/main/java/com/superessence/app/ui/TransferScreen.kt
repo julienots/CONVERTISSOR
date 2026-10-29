@@ -15,6 +15,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -107,6 +113,7 @@ fun TransferScreen(onBack: () -> Unit) {
         }
         Hint("Installe Fluxo sur les deux appareils et connecte-les au même Wi‑Fi (ou au point d'accès créé par le récepteur). Aucune limite de taille : 2 Go et plus.")
         CurrentTransfer()
+        ReceivedFiles()
         if (tab == 0) SendTab() else ReceiveTab()
         Events()
     }
@@ -285,21 +292,67 @@ private fun ReceiveTab() {
             TextButton(onClick = { Transfer.stopHotspot(ctx) }) { Text("Arrêter le point d'accès") }
         }
     }
+}
 
-    if (ui.received.isNotEmpty()) {
-        Section("Fichiers reçus (Téléchargements/Fluxo/Reçus)") {
-            ui.received.take(30).forEach { f ->
-                Row(
+@Composable
+private fun ReceivedFiles() {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val ui by Transfer.ui.collectAsState()
+    LaunchedEffect(Unit) { Transfer.loadInbox(ctx.applicationContext) }
+    if (ui.received.isEmpty()) return
+    val pending = ui.received.filter { it.saved == null && it.file != null }
+    Section("Fichiers reçus") {
+        if (pending.size > 1) {
+            BigButton("Tout télécharger (${pending.size})", Icons.Filled.Download) {
+                scope.launch { pending.forEach { Transfer.download(ctx.applicationContext, it) } }
+            }
+        }
+        ui.received.take(50).forEach { f ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(SE.SurfaceHi, RoundedCornerShape(14.dp))
+                    .padding(start = 12.dp, top = 6.dp, bottom = 6.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
                     Modifier
-                        .fillMaxWidth()
-                        .clickable { Storage.openFile(ctx, f) }
-                        .padding(vertical = 4.dp),
+                        .weight(1f)
+                        .clickable { Transfer.openable(ctx, f)?.let { Storage.openFile(ctx, it) } },
                 ) {
-                    Text(f.name, Modifier.weight(1f), maxLines = 1)
-                    Text(Storage.humanSize(f.size), color = SE.Muted, fontSize = 12.sp)
+                    Text(f.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 14.sp)
+                    Text(
+                        Storage.humanSize(f.size) + (if (f.from.isNotBlank()) " · de ${f.from}" else ""),
+                        color = SE.Muted, fontSize = 12.sp, maxLines = 1,
+                    )
+                }
+                when {
+                    f.saving -> CircularProgressIndicator(Modifier.size(22.dp).padding(2.dp), strokeWidth = 2.dp)
+                    f.saved != null -> {
+                        Pill("Téléchargé ✓", SE.Green)
+                        IconButton(onClick = { Storage.shareFiles(ctx, listOf(f.saved)) }) {
+                            Icon(Icons.Filled.Share, "Partager", tint = SE.Cyan)
+                        }
+                    }
+                    else -> {
+                        Button(
+                            onClick = { scope.launch { Transfer.download(ctx.applicationContext, f) } },
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Icon(Icons.Filled.Download, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Télécharger", fontSize = 13.sp)
+                        }
+                        IconButton(onClick = { Transfer.discard(f) }) {
+                            Icon(Icons.Filled.Delete, "Supprimer", tint = SE.Muted)
+                        }
+                    }
                 }
             }
         }
+        Hint("Les fichiers téléchargés vont dans Téléchargements/Fluxo/Reçus.")
     }
 }
 

@@ -7,10 +7,12 @@ import android.os.Build
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.superessence.app.core.SavedFile
+import com.superessence.app.core.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.Inet4Address
@@ -39,7 +41,18 @@ data class TransferUi(
     val hotspot: HotspotInfo? = null,
     val current: TransferProgress? = null,
     val events: List<String> = emptyList(),
-    val received: List<SavedFile> = emptyList(),
+    val received: List<ReceivedFile> = emptyList(),
+)
+
+/** Fichier reçu, gardé dans la boîte de réception de l'app tant qu'il n'est pas téléchargé. */
+data class ReceivedFile(
+    val id: String,
+    val name: String,
+    val size: Long,
+    val from: String,
+    val file: File?,
+    val saved: SavedFile? = null,
+    val saving: Boolean = false,
 )
 
 object Transfer {
@@ -80,6 +93,62 @@ object Transfer {
         val host = hostPort.substringBefore(':')
         val port = hostPort.substringAfter(':', PORT.toString()).toIntOrNull() ?: PORT
         return Peer(name.ifBlank { host }, host, port)
+    }
+
+    // ---------- Boîte de réception ----------
+
+    private fun inboxDir(ctx: Context) = File(ctx.filesDir, "inbox")
+
+    @Volatile
+    private var inboxLoaded = false
+
+    internal fun newInboxFile(ctx: Context, name: String): File =
+        File(inboxDir(ctx), System.nanoTime().toString()).apply { mkdirs() }.let { File(it, Storage.sanitize(name)) }
+
+    internal fun addReceived(item: ReceivedFile) = ui.update { it.copy(received = listOf(item) + it.received) }
+
+    /** Recharge les fichiers reçus mais pas encore téléchargés (après redémarrage de l'app). */
+    fun loadInbox(ctx: Context) {
+        if (inboxLoaded) return
+        inboxLoaded = true
+        val known = ui.value.received.mapNotNull { it.file?.absolutePath }.toSet()
+        val found = inboxDir(ctx).listFiles().orEmpty()
+            .flatMap { d -> d.listFiles().orEmpty().filter { it.isFile } }
+            .filter { it.absolutePath !in known }
+            .sortedByDescending { it.lastModified() }
+            .map { ReceivedFile(it.absolutePath, it.name, it.length(), "", it) }
+        if (found.isNotEmpty()) ui.update { it.copy(received = it.received + found) }
+    }
+
+    private fun patch(id: String, f: (ReceivedFile) -> ReceivedFile) =
+        ui.update { st -> st.copy(received = st.received.map { if (it.id == id) f(it) else it }) }
+
+    /** Déplace le fichier vers Téléchargements/Fluxo/Reçus. */
+    suspend fun download(ctx: Context, item: ReceivedFile) {
+        val file = item.file ?: return
+        if (item.saved != null || item.saving) return
+        patch(item.id) { it.copy(saving = true) }
+        try {
+            val saved = withContext(Dispatchers.IO) {
+                val s = Storage.save(ctx, file, item.name, "Reçus")
+                file.delete()
+                file.parentFile?.delete()
+                s
+            }
+            patch(item.id) { it.copy(saving = false, saved = saved, file = null) }
+        } catch (e: Throwable) {
+            patch(item.id) { it.copy(saving = false) }
+            log("❌ Téléchargement de ${item.name} impossible : ${e.message}")
+        }
+    }
+
+    /** Fichier ouvrable : la copie téléchargée, sinon celle de la boîte de réception. */
+    fun openable(ctx: Context, item: ReceivedFile): SavedFile? = item.saved
+        ?: item.file?.let { SavedFile(item.name, Storage.uriForCache(ctx, it), item.size, Storage.mimeOf(item.name)) }
+
+    fun discard(item: ReceivedFile) {
+        item.file?.let { it.delete(); it.parentFile?.delete() }
+        ui.update { st -> st.copy(received = st.received.filter { it.id != item.id }) }
     }
 
     fun startReceiving(ctx: Context) = service(ctx, TransferService.ACTION_RECEIVE_START)

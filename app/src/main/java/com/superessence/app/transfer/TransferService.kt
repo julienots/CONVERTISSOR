@@ -193,27 +193,29 @@ class TransferService : Service() {
                 repeat(count) { index ->
                     val name = input.readUTF()
                     val size = input.readLong()
-                    val target = Storage.openOutput(this, name, "Reçus")
+                    val dest = Transfer.newInboxFile(this, name)
                     try {
-                        var left = size
-                        while (left > 0) {
-                            val n = input.read(buf, 0, minOf(left, buf.size.toLong()).toInt())
-                            if (n < 0) throw EOFException("Connexion interrompue")
-                            target.stream.write(buf, 0, n)
-                            left -= n
-                            meter.add(n)?.let { speed ->
-                                publish(TransferProgress(false, sender, name, index + 1, count, meter.done, total, speed))
+                        dest.outputStream().use { out ->
+                            var left = size
+                            while (left > 0) {
+                                val n = input.read(buf, 0, minOf(left, buf.size.toLong()).toInt())
+                                if (n < 0) throw EOFException("Connexion interrompue")
+                                out.write(buf, 0, n)
+                                left -= n
+                                meter.add(n)?.let { speed ->
+                                    publish(TransferProgress(false, sender, name, index + 1, count, meter.done, total, speed))
+                                }
                             }
                         }
                     } catch (e: Throwable) {
-                        target.abort()
+                        dest.delete()
+                        dest.parentFile?.delete()
                         throw e
                     }
-                    val saved = target.finish()
-                    Transfer.ui.update { it.copy(received = (listOf(saved) + it.received).take(100)) }
+                    Transfer.addReceived(ReceivedFile(dest.absolutePath, dest.name, size, sender, dest))
                 }
                 DataOutputStream(s.getOutputStream()).apply { writeInt(1); flush() }
-                Transfer.log("✅ $count fichier(s) reçus de $sender en ${meter.elapsedText()} → Téléchargements/Fluxo/Reçus")
+                Transfer.log("✅ $count fichier(s) reçus de $sender en ${meter.elapsedText()} : appuie sur « Télécharger »")
             } catch (e: Throwable) {
                 Transfer.log("❌ Réception échouée : ${e.message ?: e.javaClass.simpleName}")
             } finally {
