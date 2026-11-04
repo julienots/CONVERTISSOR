@@ -24,6 +24,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.DocumentScanner
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.QrCode2
+import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -50,17 +62,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superessence.app.R
 
-data class Tool(val route: String, val title: String, val subtitle: String, val icon: ImageVector, val color: Color)
+data class Tool(val route: String, val title: String, val subtitle: String, val icon: ImageVector, val color: Color, val cat: String)
+
+private const val C1 = "Transférer & télécharger"
+private const val C2 = "Convertir"
+private const val C3 = "Éditer"
+private const val C4 = "Outils"
 
 val tools = listOf(
-    Tool("transfer", "Transfert", "Appareil → appareil, jusqu'à 2 Go et plus", Icons.Filled.SwapHoriz, SE.Cyan),
-    Tool("convert", "Convertir", "Vidéo, audio, image, PDF, texte, Word, archives", Icons.Filled.Transform, SE.Purple),
-    Tool("apk", "XAPK → APK", "XAPK, APKS, APKM, ZIP en un seul APK", Icons.Filled.Android, SE.Green),
-    Tool("youtube", "Lien → MP3", "YouTube en MP3, M4A ou MP4", Icons.Filled.SmartDisplay, SE.Red),
-    Tool("frames", "Vidéo → Images", "Toutes les images dans un ZIP", Icons.Filled.PhotoLibrary, SE.Orange),
-    Tool("transcribe", "Transcription", "Vidéo / audio en texte TXT + SRT", Icons.Filled.Subtitles, SE.Blue),
-    Tool("compress", "Compresseur", "Réduis la taille de tes fichiers", Icons.Filled.Compress, Color(0xFF14B8A6)),
-    Tool("about", "À propos", "SuperEssence Studio", Icons.Filled.Info, SE.Muted),
+    Tool("transfer", "Transfert", "Appareil → appareil, jusqu'à 2 Go et plus", Icons.Filled.SwapHoriz, SE.Cyan, C1),
+    Tool("youtube", "Liens → MP3", "YouTube en MP3, M4A ou MP4, en lot", Icons.Filled.SmartDisplay, SE.Red, C1),
+    Tool("apps", "Mes applis → APK", "Sauvegarde l'APK des applis installées", Icons.Filled.Apps, SE.Green, C1),
+    Tool("convert", "Convertir", "Vidéo, audio, image, PDF, texte, Word, archives", Icons.Filled.Transform, SE.Purple, C2),
+    Tool("apk", "XAPK → APK", "XAPK, APKS, APKM, ZIP en un seul APK", Icons.Filled.Android, SE.Green, C2),
+    Tool("frames", "Vidéo → Images", "Toutes les images dans un ZIP", Icons.Filled.PhotoLibrary, SE.Orange, C2),
+    Tool("transcribe", "Transcription", "Vidéo / audio en texte TXT + SRT", Icons.Filled.Subtitles, SE.Blue, C2),
+    Tool("ocr", "Photo → texte", "Reconnaissance de texte (OCR)", Icons.Filled.DocumentScanner, SE.Cyan, C2),
+    Tool("tts", "Texte → voix", "Transforme un texte en MP3", Icons.Filled.RecordVoiceOver, SE.Purple, C2),
+    Tool("units", "Unités & devises", "Longueur, poids, °C, données, €/$…", Icons.Filled.Calculate, SE.Orange, C2),
+    Tool("video", "Éditeur vidéo", "Couper, fusionner, vitesse, musique, diaporama", Icons.Filled.Movie, SE.Red, C3),
+    Tool("audio", "Éditeur audio", "Couper, volume, basses, karaoké, fusion", Icons.Filled.GraphicEq, SE.Blue, C3),
+    Tool("image", "Éditeur photo", "Taille, rotation, N&B, filigrane, collage", Icons.Filled.Image, SE.Green, C3),
+    Tool("pdf", "Outils PDF", "Fusionner, séparer, pivoter, mot de passe", Icons.Filled.PictureAsPdf, SE.Red, C3),
+    Tool("compress", "Compresseur", "Réduis la taille de tes fichiers", Icons.Filled.Compress, Color(0xFF14B8A6), C3),
+    Tool("qr", "QR codes", "Scanner et créer (lien, Wi‑Fi, contact…)", Icons.Filled.QrCode2, SE.Cyan, C4),
+    Tool("rec", "Dictaphone", "Enregistre ta voix en M4A ou MP3", Icons.Filled.Mic, SE.Red, C4),
+    Tool("text", "Outils texte", "Majuscules, Base64, compteur, liens…", Icons.Filled.TextFields, SE.Purple, C4),
+    Tool("info", "Infos fichier", "Détails, métadonnées, MD5 / SHA-256", Icons.Filled.Fingerprint, SE.Orange, C4),
+    Tool("about", "À propos", "SuperEssence Studio", Icons.Filled.Info, SE.Muted, C4),
 )
 
 @Composable
@@ -93,7 +122,12 @@ fun HomeScreen(open: (String) -> Unit) {
                 }
             }
         }
-        items(tools) { t -> ToolCard(t) { open(t.route) } }
+        tools.groupBy { it.cat }.forEach { (cat, list) ->
+            item(span = { GridItemSpan(2) }) {
+                Text(cat, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SE.Text, modifier = Modifier.padding(top = 8.dp))
+            }
+            items(list) { t -> ToolCard(t) { open(t.route) } }
+        }
         item(span = { GridItemSpan(2) }) {
             Text(
                 "Créé par SuperEssence Studio",
@@ -125,7 +159,7 @@ private fun Header() {
         )
         Spacer(Modifier.height(10.dp))
         Text("Fluxo", fontSize = 28.sp, fontWeight = FontWeight.Black, color = SE.Text)
-        Text("Transfère. Convertis. Compresse.", color = SE.Cyan, fontSize = 14.sp)
+        Text("${tools.size - 1} outils · Transfère. Convertis. Édite.", color = SE.Cyan, fontSize = 14.sp)
     }
 }
 

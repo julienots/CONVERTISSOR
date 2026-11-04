@@ -15,7 +15,18 @@ import androidx.core.content.IntentCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.superessence.app.tools.ImageTools
+import com.superessence.app.tools.InfoTools
+import com.superessence.app.tools.MediaTools
+import com.superessence.app.tools.PdfTools
 import com.superessence.app.ui.AboutScreen
+import com.superessence.app.ui.AppsScreen
+import com.superessence.app.ui.OpScreen
+import com.superessence.app.ui.QrScreen
+import com.superessence.app.ui.RecorderScreen
+import com.superessence.app.ui.TextToolsScreen
+import com.superessence.app.ui.TtsScreen
+import com.superessence.app.ui.UnitsScreen
 import com.superessence.app.ui.ApkScreen
 import com.superessence.app.ui.CompressScreen
 import com.superessence.app.ui.ConvertScreen
@@ -53,6 +64,18 @@ class MainActivity : ComponentActivity() {
                     composable("transcribe") { TranscribeScreen(back) }
                     composable("compress") { CompressScreen(back) }
                     composable("about") { AboutScreen(back) }
+                    composable("video") { OpScreen("Éditeur vidéo", "video", "Couper, accélérer, pivoter, fusionner des vidéos, changer la musique, créer un diaporama…", MediaTools.videoOps, back) }
+                    composable("audio") { OpScreen("Éditeur audio", "audio", "Couper (sonnerie), volume, normaliser, basses, karaoké, fondus, fusion… Résultats en MP3.", MediaTools.audioOps, back) }
+                    composable("image") { OpScreen("Éditeur photo", "image", "Redimensionner, pivoter, noir et blanc, recadrer, filigrane, collage, supprimer le GPS…", ImageTools.ops, back) }
+                    composable("pdf") { OpScreen("Outils PDF", "pdf", "Fusionner, extraire, séparer, pivoter, supprimer des pages, protéger ou déverrouiller un PDF.", PdfTools.ops, back) }
+                    composable("ocr") { OpScreen("Photo → texte", "ocr", "Choisis des photos ou captures d'écran contenant du texte.", InfoTools.ocrOps, back) }
+                    composable("info") { OpScreen("Infos fichier", "info", "Tout savoir sur un fichier : format, durée, résolution, appareil photo, GPS, empreintes.", InfoTools.ops, back) }
+                    composable("qr") { QrScreen(back) }
+                    composable("tts") { TtsScreen(back) }
+                    composable("rec") { RecorderScreen(back) }
+                    composable("units") { UnitsScreen(back) }
+                    composable("text") { TextToolsScreen(back) }
+                    composable("apps") { AppsScreen(back) }
                 }
             }
         }

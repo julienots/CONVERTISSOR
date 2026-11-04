@@ -509,6 +509,10 @@ fun AboutScreen(onBack: () -> Unit) {
             Hint("• Vidéo → toutes les images en ZIP")
             Hint("• Transcription vidéo → texte (hors connexion)")
             Hint("• Compresseur de fichiers")
+            Hint("• Éditeurs vidéo, audio et photo · Outils PDF")
+            Hint("• Photo → texte (OCR), Texte → voix, Dictaphone")
+            Hint("• QR codes, Unités & devises, Outils texte, Infos fichier")
+            Hint("• Sauvegarde des applis installées en APK")
         }
         Section("Où sont mes fichiers ?") {
             Hint("Tous les résultats sont dans Téléchargements/Fluxo (et Téléchargements/Fluxo/Reçus pour les transferts).")

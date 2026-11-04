@@ -108,6 +108,9 @@ dependencies {
     implementation(files("libs/ARSCLib.jar"))
     implementation("com.android.tools.build:apksig:8.7.3")
 
+    // Photo -> texte (OCR hors connexion)
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+
     // PDF -> texte
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 
