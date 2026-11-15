@@ -24,6 +24,7 @@ data class YtItem(
     val id: Long,
     val url: String,
     val format: String,
+    val quality: String = "192",
     val title: String = url,
     val status: YtStatus = YtStatus.WAITING,
     val progress: Float = -1f,
@@ -46,6 +47,9 @@ object YtQueue {
     /** « Télécharger automatiquement » : enregistre dans Téléchargements dès que c'est prêt. */
     val autoSave = MutableStateFlow(false)
 
+    /** Ajoute titre, artiste et pochette dans les MP3 / M4A. */
+    val embedTags = MutableStateFlow(true)
+
     private fun outDir(ctx: Context) = File(ctx.filesDir, "yt_out")
 
     private fun patch(id: Long, f: (YtItem) -> YtItem) =
@@ -55,29 +59,31 @@ object YtQueue {
     fun parseLinks(text: String): List<String> =
         Regex("https?://\\S+").findAll(text).map { it.value.trimEnd(',', ';', ')', ']') }.distinct().toList()
 
-    fun add(ctx: Context, text: String, format: String): Int {
+    fun add(ctx: Context, text: String, format: String, quality: String = "192"): Int =
+        addLinks(ctx, parseLinks(text), format, quality)
+
+    fun addLinks(ctx: Context, links: List<String>, format: String, quality: String): Int {
         val app = ctx.applicationContext
-        val links = parseLinks(text)
         links.forEach { link ->
             // Une playlist est développée en tâche de fond
             if (link.contains("list=") && !link.contains("watch")) {
                 Background.begin(app, "Lecture de la playlist")
                 scope.launch {
                     try {
-                        YouTube.expand(link).forEach { enqueue(app, it, format) }
+                        YouTube.expand(link).forEach { enqueue(app, it, format, quality) }
                     } finally {
                         Background.end(app)
                     }
                 }
             } else {
-                enqueue(app, link, format)
+                enqueue(app, link, format, quality)
             }
         }
         return links.size
     }
 
-    private fun enqueue(ctx: Context, url: String, format: String) {
-        val item = YtItem(ids.incrementAndGet(), url, format)
+    private fun enqueue(ctx: Context, url: String, format: String, quality: String) {
+        val item = YtItem(ids.incrementAndGet(), url, format, quality)
         items.update { it + item }
         start(ctx, item)
     }
@@ -91,7 +97,7 @@ object YtQueue {
                     val video = YouTube.fetch(item.url)
                     patch(item.id) { it.copy(title = video.title) }
                     val dest = File(outDir(ctx), item.id.toString())
-                    val file = YouTube.produce(ctx, video, item.format, dest) { p, msg ->
+                    val file = YouTube.produce(ctx, video, item.format, item.quality, embedTags.value, dest) { p, msg ->
                         patch(item.id) { it.copy(progress = p, message = msg) }
                     }
                     patch(item.id) { it.copy(status = YtStatus.READY, file = file, progress = 1f, message = "Prêt") }

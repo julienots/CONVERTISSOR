@@ -76,7 +76,13 @@ import com.superessence.app.core.JobState
 import com.superessence.app.core.Jobs
 import com.superessence.app.core.Storage
 import com.superessence.app.transcribe.Transcriber
+import com.superessence.app.youtube.SearchHit
+import com.superessence.app.youtube.YouTube
 import com.superessence.app.youtube.YtItem
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.superessence.app.youtube.YtQueue
 import com.superessence.app.youtube.YtStatus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,7 +116,7 @@ fun ConvertScreen(onBack: () -> Unit, open: (String) -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Pill("Type détecté : ${kind.label}")
                 }
-                ChoiceChips(Formats.targets(kind), target, { it.label }) { target = it }
+                ChoiceChips(Formats.targets(kind, Storage.extension(Storage.displayName(ctx, files.first()))), target, { it.label }) { target = it }
                 val t = target
                 if (t != null) {
                     BigButton("Convertir en ${t.label}", Icons.Filled.Transform) {
@@ -130,9 +136,9 @@ fun ConvertScreen(onBack: () -> Unit, open: (String) -> Unit) {
         Section("Conversions possibles") {
             Hint("• Vidéo → MP3, M4A, WAV, OGG, FLAC, OPUS, MP4, MKV, WEBM, AVI, MOV, GIF, images, texte")
             Hint("• Audio → MP3, M4A, WAV, OGG, FLAC, OPUS, texte")
-            Hint("• Image (JPG, PNG, WEBP, HEIC…) → JPG, PNG, WEBP, PDF")
-            Hint("• Texte / HTML / Markdown → PDF · Word (DOCX) → TXT, PDF")
-            Hint("• PDF → TXT, images PNG/JPG")
+            Hint("• Image (JPG, PNG, WEBP, HEIC…) → JPG, PNG, WEBP, BMP, GIF, TIFF, ICO, PDF")
+            Hint("• Texte / HTML / Markdown → PDF, Word, HTML · JSON ↔ CSV ↔ XML · Word → TXT, PDF, HTML")
+            Hint("• PDF → TXT, Word, images PNG/JPG · liens et musique : outil « Liens & musique »")
             Hint("• ZIP, 7Z, RAR, TAR, GZ → extraction · tout fichier → ZIP")
             Hint("• XAPK / APKS / APKM → APK")
         }
@@ -242,20 +248,47 @@ fun YoutubeScreen(onBack: () -> Unit) {
     val shared by Shared.sharedText.collectAsState()
     var text by rememberSaveable { mutableStateOf("") }
     var format by rememberSaveable { mutableStateOf("mp3") }
+    var quality by rememberSaveable { mutableStateOf("192") }
+    var query by rememberSaveable { mutableStateOf("") }
+    var musicSearch by rememberSaveable { mutableStateOf(true) }
+    var searching by remember { mutableStateOf(false) }
+    var searchError by remember { mutableStateOf<String?>(null) }
+    val hits = remember { mutableStateListOf<SearchHit>() }
+    val scope = rememberCoroutineScope()
     val items by YtQueue.items.collectAsState()
     val autoSave by YtQueue.autoSave.collectAsState()
+    val tags by YtQueue.embedTags.collectAsState()
     val notifPerm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
+    val isVideo = format == "mp4"
+    val qualities = if (isVideo) listOf("360", "480", "720", "1080") else listOf("128", "192", "256", "320")
+    val effQuality = if (quality in qualities) quality else if (isVideo) "720" else "192"
 
     fun addAll() {
-        val n = YtQueue.add(ctx, text, format)
+        val n = YtQueue.add(ctx, text, format, effQuality)
         if (n == 0) {
             Toast.makeText(ctx, "Colle au moins un lien valide", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(ctx, "$n lien(s) ajouté(s) — tu peux quitter l'app", Toast.LENGTH_SHORT).show()
             text = ""
+        }
+    }
+    fun search() {
+        if (query.isBlank() || searching) return
+        searching = true
+        searchError = null
+        scope.launch {
+            try {
+                val r = withContext(Dispatchers.IO) { YouTube.search(query.trim(), musicSearch) }
+                hits.clear(); hits.addAll(r)
+                if (r.isEmpty()) searchError = "Aucun résultat"
+            } catch (e: Throwable) {
+                searchError = "Recherche impossible : ${e.message}"
+            } finally {
+                searching = false
+            }
         }
     }
     LaunchedEffect(shared) {
@@ -265,8 +298,49 @@ fun YoutubeScreen(onBack: () -> Unit) {
         }
     }
 
-    ToolScaffold("Liens → MP3", onBack) {
-        Section("Liens YouTube") {
+    ToolScaffold("Liens & musique → fichiers", onBack) {
+        Section("Rechercher un morceau") {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("Titre, artiste…") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { search() }),
+                trailingIcon = {
+                    if (searching) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                    else IconButton(onClick = { search() }) { Icon(Icons.Filled.Search, "Rechercher") }
+                },
+            )
+            ChoiceChips(listOf(true, false), musicSearch, { if (it) "YouTube Music" else "Vidéos YouTube" }) { musicSearch = it }
+            searchError?.let { Text(it, color = SE.Red, fontSize = 13.sp) }
+            if (hits.isNotEmpty()) {
+                TextButton(onClick = {
+                    YtQueue.addLinks(ctx, hits.map { it.url }, format, effQuality)
+                    Toast.makeText(ctx, "${hits.size} titres ajoutés", Toast.LENGTH_SHORT).show()
+                }) { Text("Tout ajouter (${hits.size})") }
+                hits.forEach { h ->
+                    Row(
+                        Modifier.fillMaxWidth().background(SE.SurfaceHi, RoundedCornerShape(12.dp)).padding(start = 12.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(h.title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                h.artist + if (h.durationSec > 0) " · %d:%02d".format(h.durationSec / 60, h.durationSec % 60) else "",
+                                color = SE.Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        IconButton(onClick = {
+                            YtQueue.addLinks(ctx, listOf(h.url), format, effQuality)
+                            Toast.makeText(ctx, "« ${h.title} » ajouté", Toast.LENGTH_SHORT).show()
+                        }) { Icon(Icons.Filled.Download, "Ajouter", tint = SE.Cyan) }
+                    }
+                }
+            }
+        }
+        Section("Liens") {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
@@ -281,12 +355,29 @@ fun YoutubeScreen(onBack: () -> Unit) {
                     }) { Icon(Icons.Filled.ContentPaste, "Coller") }
                 },
             )
+            Hint("YouTube, YouTube Music (morceaux, albums, playlists), SoundCloud, Bandcamp, PeerTube… mais aussi n'importe quel lien direct vers un fichier (PDF, image, ZIP, vidéo, audio ; Dropbox et Google Drive acceptés).")
             val count = YtQueue.parseLinks(text).size
-            ChoiceChips(listOf("mp3", "m4a", "mp4"), format, { it.uppercase() }) { format = it }
+            Text("Format")
+            ChoiceChips(listOf("mp3", "m4a", "flac", "wav", "ogg", "opus", "mp4", "original"), format, {
+                if (it == "original") "Fichier tel quel" else it.uppercase()
+            }) { format = it }
+            if (format == "original") {
+                Hint("Pour un lien de fichier : téléchargé sans conversion. Pour une vidéo YouTube : MP4.")
+            } else if (format != "flac" && format != "wav") {
+                Text(if (isVideo) "Qualité vidéo (p)" else "Qualité audio (kb/s)")
+                ChoiceChips(qualities, effQuality, { if (isVideo) it + "p" else it }) { quality = it }
+            }
             BigButton(
-                if (count > 1) "Convertir les $count liens en ${format.uppercase()}" else "Convertir en ${format.uppercase()}",
+                if (count > 1) "Convertir les $count liens" else "Convertir / télécharger",
                 Icons.Filled.Download, enabled = count > 0,
             ) { addAll() }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Titre, artiste et pochette")
+                    Hint("Ajoutés dans les MP3 et M4A pour ta bibliothèque musicale.")
+                }
+                Switch(checked = tags, onCheckedChange = { YtQueue.embedTags.value = it })
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Télécharger automatiquement")
@@ -294,7 +385,7 @@ fun YoutubeScreen(onBack: () -> Unit) {
                 }
                 Switch(checked = autoSave, onCheckedChange = { YtQueue.autoSave.value = it })
             }
-            Hint("Les playlists sont acceptées. 3 liens sont traités en même temps, les autres attendent. Tu peux quitter l'app : ça continue et une notification te prévient.")
+            Hint("Les playlists et albums sont acceptés. 3 liens sont traités en même temps. Tu peux quitter l'app : ça continue et une notification te prévient.")
         }
         if (items.isNotEmpty()) {
             val ready = items.count { it.status == YtStatus.READY }
@@ -323,7 +414,7 @@ private fun YtRow(item: YtItem) {
             Column(Modifier.weight(1f)) {
                 Text(item.title, maxLines = 2, overflow = TextOverflow.Ellipsis, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 Text(
-                    item.format.uppercase() + " · " + when (item.status) {
+                    (if (item.format == "original") "FICHIER" else item.format.uppercase()) + " · " + when (item.status) {
                         YtStatus.SAVED -> "Téléchargé dans Téléchargements/Fluxo"
                         else -> item.message
                     },

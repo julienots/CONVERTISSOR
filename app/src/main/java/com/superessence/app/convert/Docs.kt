@@ -108,7 +108,7 @@ object Docs {
         }
     }
 
-    fun textToPdf(text: String, out: OutputStream) {
+    fun textToPdf(text: CharSequence, out: OutputStream) {
         val doc = PdfDocument()
         val margin = 48
         val width = A4_W - 2 * margin
@@ -148,6 +148,9 @@ object Docs {
             doc.close()
         }
     }
+
+    fun readRaw(ctx: Context, uri: Uri): String =
+        ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) } ?: error("Fichier illisible")
 
     fun readText(ctx: Context, uri: Uri, name: String): String {
         val raw = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }

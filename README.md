@@ -15,9 +15,9 @@ artefact `Fluxo-apk`). Android 8.0 ou plus est requis.
 | Outil | Détails |
 |---|---|
 | **Transfert** | Envoi direct d'appareil à appareil en Wi‑Fi local (TCP), sans limite de taille (2 Go et plus). Découverte automatique, QR code, ou IP manuelle. Sans Wi‑Fi : le récepteur crée un point d'accès local. La vitesse dépend du Wi‑Fi (souvent 20 à 60 Mo/s en 5 GHz). |
-| **Convertir** | Vidéo → MP3, M4A, WAV, OGG, FLAC, OPUS, MP4, MKV, WEBM, AVI, MOV, GIF, images · Audio → tous formats audio · Images (JPG, PNG, WEBP, HEIC…) → JPG, PNG, WEBP, PDF · Texte/HTML → PDF · Word → TXT/PDF · PDF → TXT ou images · ZIP/7Z/RAR/TAR/GZ → extraction · tout → ZIP |
+| **Convertir** | Vidéo → MP3, M4A, WAV, OGG, FLAC, OPUS, MP4, MKV, WEBM, AVI, MOV, GIF, images · Audio → tous formats audio · Images (JPG, PNG, WEBP, HEIC…) → JPG, PNG, WEBP, BMP, GIF, TIFF, ICO, PDF · Texte/HTML/Markdown → PDF, Word, HTML · JSON ↔ CSV ↔ XML · Word → TXT/PDF/HTML · PDF → TXT/Word · PDF → TXT ou images · ZIP/7Z/RAR/TAR/GZ → extraction · tout → ZIP |
 | **XAPK → APK** | XAPK, APKS, APKM ou ZIP : fusion des splits en **un seul APK** (ARSCLib) re-signé sur l'appareil, installation directe des splits, ou extraction. |
-| **Lien → MP3** | Liens YouTube (et autres services NewPipe) → MP3, M4A ou MP4. |
+| **Liens & musique** | YouTube, **YouTube Music** (morceaux, albums, playlists), SoundCloud… → MP3, M4A, FLAC, WAV, OGG, OPUS ou MP4 (choix du débit / de la résolution), titre + artiste + pochette intégrés. **Recherche de morceaux** dans l'app. N'importe quel **lien direct vers un fichier** (PDF, image, ZIP, vidéo… ; Dropbox et Google Drive inclus) : téléchargement tel quel ou conversion. |
 | **Vidéo → Images** | Extrait les images d'une vidéo (de 1 toutes les 5 s jusqu'à toutes) dans un ZIP. |
 | **Transcription** | Vidéo/audio → texte `.txt` + sous-titres `.srt`, hors connexion (Vosk). Modèle téléchargé une fois par langue. |
 | **Compresseur** | Images, vidéos, audio optimisés, ou tout regrouper dans un ZIP. |
@@ -33,6 +33,8 @@ artefact `Fluxo-apk`). Android 8.0 ou plus est requis.
 | **Outils texte** | Casse, tri, doublons, Base64, URL, accents, extraction de liens/e-mails, compteur. |
 | **Infos fichier** | Format, codecs, durée, résolution, EXIF, GPS, MD5/SHA-1/SHA-256. |
 | **Mes applis → APK** | Sauvegarde l'APK (ou .apks) de n'importe quelle appli installée. |
+
+L'accueil propose une **recherche d'outils**, des **favoris** (appui long) et les outils récents.
 
 Tous les résultats sont enregistrés dans **Téléchargements/Fluxo**.
 

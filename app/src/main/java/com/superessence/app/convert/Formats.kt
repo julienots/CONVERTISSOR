@@ -49,7 +49,7 @@ object Formats {
     )
     private val zip = Target("zip", "ZIP (compressé)")
 
-    fun targets(kind: Kind): List<Target> = when (kind) {
+    fun targets(kind: Kind, ext: String = ""): List<Target> = when (kind) {
         Kind.VIDEO -> audioTargets + listOf(
             Target("mp4", "MP4"),
             Target("mkv", "MKV"),
@@ -66,12 +66,23 @@ object Formats {
             Target("jpg", "JPG"),
             Target("png", "PNG"),
             Target("webp", "WEBP"),
+            Target("bmp", "BMP"),
+            Target("gif", "GIF"),
+            Target("tiff", "TIFF"),
+            Target("ico", "ICO (icône)"),
             Target("pdf", "PDF (toutes les images dans un PDF)"),
             zip,
         )
-        Kind.TEXT -> listOf(Target("pdf", "PDF"), Target("txt", "TXT"), zip)
-        Kind.PDF -> listOf(Target("txt", "TXT (texte du PDF)"), Target("png", "Images PNG (ZIP)"), Target("jpg", "Images JPG (ZIP)"), zip)
-        Kind.DOCX -> listOf(Target("txt", "TXT"), Target("pdf", "PDF"), zip)
+        Kind.TEXT -> when (ext) {
+            "md" -> listOf(Target("html", "HTML"), Target("pdf", "PDF"), Target("docx", "Word (DOCX)"), Target("txt", "TXT"))
+            "csv" -> listOf(Target("json", "JSON"), Target("xml", "XML"), Target("html", "HTML (tableau)"), Target("pdf", "PDF"), Target("docx", "Word (DOCX)"), Target("txt", "TXT"))
+            "json" -> listOf(Target("csv", "CSV (Excel)"), Target("xml", "XML"), Target("html", "HTML"), Target("pdf", "PDF"), Target("txt", "TXT"))
+            "xml" -> listOf(Target("json", "JSON"), Target("pdf", "PDF"), Target("txt", "TXT"))
+            "html", "htm" -> listOf(Target("pdf", "PDF"), Target("docx", "Word (DOCX)"), Target("txt", "TXT"))
+            else -> listOf(Target("pdf", "PDF"), Target("docx", "Word (DOCX)"), Target("html", "HTML"), Target("txt", "TXT"))
+        } + zip
+        Kind.PDF -> listOf(Target("txt", "TXT (texte du PDF)"), Target("docx", "Word (DOCX, texte)"), Target("png", "Images PNG (ZIP)"), Target("jpg", "Images JPG (ZIP)"), zip)
+        Kind.DOCX -> listOf(Target("txt", "TXT"), Target("pdf", "PDF"), Target("html", "HTML"), zip)
         Kind.ARCHIVE -> listOf(Target("extract", "Extraire le contenu"), zip)
         Kind.APP -> listOf(Target("apk", "APK unique (outil APK)"), Target("extract", "Extraire le contenu"))
         Kind.OTHER -> listOf(zip)

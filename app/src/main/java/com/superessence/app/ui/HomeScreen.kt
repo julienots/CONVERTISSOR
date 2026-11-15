@@ -43,6 +43,21 @@ import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Transform
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,7 +86,7 @@ private const val C4 = "Outils"
 
 val tools = listOf(
     Tool("transfer", "Transfert", "Appareil → appareil, jusqu'à 2 Go et plus", Icons.Filled.SwapHoriz, SE.Cyan, C1),
-    Tool("youtube", "Liens → MP3", "YouTube en MP3, M4A ou MP4, en lot", Icons.Filled.SmartDisplay, SE.Red, C1),
+    Tool("youtube", "Liens & musique", "YouTube Music → MP3, recherche, tout lien → fichier", Icons.Filled.SmartDisplay, SE.Red, C1),
     Tool("apps", "Mes applis → APK", "Sauvegarde l'APK des applis installées", Icons.Filled.Apps, SE.Green, C1),
     Tool("convert", "Convertir", "Vidéo, audio, image, PDF, texte, Word, archives", Icons.Filled.Transform, SE.Purple, C2),
     Tool("apk", "XAPK → APK", "XAPK, APKS, APKM, ZIP en un seul APK", Icons.Filled.Android, SE.Green, C2),
@@ -92,9 +107,36 @@ val tools = listOf(
     Tool("about", "À propos", "SuperEssence Studio", Icons.Filled.Info, SE.Muted, C4),
 )
 
+private fun prefs(ctx: Context) = ctx.getSharedPreferences("home", Context.MODE_PRIVATE)
+
+private fun loadList(ctx: Context, key: String): List<String> =
+    prefs(ctx).getString(key, "").orEmpty().split(',').filter { it.isNotBlank() }
+
+private fun saveList(ctx: Context, key: String, list: List<String>) =
+    prefs(ctx).edit().putString(key, list.joinToString(",")).apply()
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(open: (String) -> Unit) {
+    val ctx = LocalContext.current
     val incoming by Shared.incoming.collectAsState()
+    var query by rememberSaveable { mutableStateOf("") }
+    val favs = remember { mutableStateListOf<String>().apply { addAll(loadList(ctx, "favs")) } }
+    val recents = remember { mutableStateListOf<String>().apply { addAll(loadList(ctx, "recents")) } }
+    fun launch(t: Tool) {
+        recents.remove(t.route); recents.add(0, t.route)
+        while (recents.size > 4) recents.removeAt(recents.size - 1)
+        saveList(ctx, "recents", recents)
+        open(t.route)
+    }
+    fun toggleFav(t: Tool) {
+        if (!favs.remove(t.route)) favs.add(t.route)
+        saveList(ctx, "favs", favs)
+    }
+    val q = query.trim().lowercase()
+    val filtered = if (q.isEmpty()) tools else tools.filter {
+        (it.title + " " + it.subtitle + " " + it.cat).lowercase().contains(q) || keywords(it.route).contains(q)
+    }
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
@@ -106,6 +148,18 @@ fun HomeScreen(open: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(span = { GridItemSpan(2) }) { Header() }
+        item(span = { GridItemSpan(2) }) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text("Cherche un outil : mp3, pdf, qr, zip, json…") },
+                leadingIcon = { Icon(Icons.Filled.Search, null) },
+                trailingIcon = { if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, "Effacer") } },
+                singleLine = true,
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         if (incoming.isNotEmpty()) {
             item(span = { GridItemSpan(2) }) {
                 Section("${incoming.size} fichier(s) partagé(s) avec Fluxo") {
@@ -122,11 +176,25 @@ fun HomeScreen(open: (String) -> Unit) {
                 }
             }
         }
-        tools.groupBy { it.cat }.forEach { (cat, list) ->
-            item(span = { GridItemSpan(2) }) {
-                Text(cat, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SE.Text, modifier = Modifier.padding(top = 8.dp))
+        if (q.isEmpty()) {
+            val favTools = favs.mapNotNull { r -> tools.firstOrNull { it.route == r } }
+            if (favTools.isNotEmpty()) {
+                item(span = { GridItemSpan(2) }) { SectionTitle("⭐ Favoris") }
+                items(favTools, key = { "fav_" + it.route }) { t -> ToolCard(t, true, { launch(t) }) { toggleFav(t) } }
             }
-            items(list) { t -> ToolCard(t) { open(t.route) } }
+            val recentTools = recents.mapNotNull { r -> tools.firstOrNull { it.route == r } }.filter { it.route !in favs }
+            if (recentTools.isNotEmpty()) {
+                item(span = { GridItemSpan(2) }) { SectionTitle("Récemment utilisés") }
+                items(recentTools, key = { "rec_" + it.route }) { t -> ToolCard(t, false, { launch(t) }) { toggleFav(t) } }
+            }
+            item(span = { GridItemSpan(2) }) { Hint("Astuce : appuie longtemps sur un outil pour l'ajouter aux favoris.") }
+        }
+        if (filtered.isEmpty()) {
+            item(span = { GridItemSpan(2) }) { Hint("Aucun outil ne correspond à « $query ».") }
+        }
+        filtered.groupBy { it.cat }.forEach { (cat, list) ->
+            item(span = { GridItemSpan(2) }) { SectionTitle(cat) }
+            items(list, key = { it.route }) { t -> ToolCard(t, t.route in favs, { launch(t) }) { toggleFav(t) } }
         }
         item(span = { GridItemSpan(2) }) {
             Text(
@@ -140,6 +208,25 @@ fun HomeScreen(open: (String) -> Unit) {
             )
         }
     }
+}
+
+@Composable
+private fun SectionTitle(text: String) =
+    Text(text, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = SE.Text, modifier = Modifier.padding(top = 8.dp))
+
+/** Mots-clés supplémentaires pour la recherche (formats, synonymes). */
+private fun keywords(route: String): String = when (route) {
+    "youtube" -> "youtube yt music musique mp3 m4a flac wav télécharger telecharger lien url soundcloud spotify playlist album recherche"
+    "convert" -> "convertir conversion jpg png webp heic bmp gif tiff ico mp4 mkv avi mov webm mp3 wav flac ogg opus json csv xml markdown md html docx word txt zip 7z rar"
+    "pdf" -> "pdf fusionner séparer mot de passe"
+    "image" -> "photo image jpg png resize redimensionner exif gps"
+    "video" -> "film vidéo video couper mp4 fusion diaporama"
+    "audio" -> "son musique sonnerie mp3 volume"
+    "transfer" -> "envoyer partager wifi fichiers"
+    "ocr" -> "scanner texte reconnaissance photo"
+    "qr" -> "qrcode scanner wifi"
+    "apk" -> "xapk apks apkm android"
+    else -> ""
 }
 
 @Composable
@@ -163,24 +250,31 @@ private fun Header() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ToolCard(t: Tool, onClick: () -> Unit) {
+private fun ToolCard(t: Tool, fav: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
     Column(
         Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(22.dp))
             .background(Brush.verticalGradient(listOf(SE.SurfaceHi, SE.Surface)))
             .border(1.dp, t.color.copy(alpha = 0.35f), RoundedCornerShape(22.dp))
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(14.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Box(
-            Modifier
-                .size(48.dp)
-                .background(t.color.copy(alpha = 0.18f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) { Icon(t.icon, null, tint = t.color, modifier = Modifier.size(28.dp)) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Box(
+                Modifier
+                    .size(48.dp)
+                    .background(t.color.copy(alpha = 0.18f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Icon(t.icon, null, tint = t.color, modifier = Modifier.size(28.dp)) }
+            Icon(
+                if (fav) Icons.Filled.Star else Icons.Filled.StarBorder, if (fav) "Favori" else null,
+                tint = if (fav) SE.Orange else SE.Muted.copy(alpha = 0.4f), modifier = Modifier.size(20.dp),
+            )
+        }
         Column {
             Text(t.title, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = SE.Text)
             Text(t.subtitle, color = SE.Muted, fontSize = 12.sp, lineHeight = 15.sp, maxLines = 3)

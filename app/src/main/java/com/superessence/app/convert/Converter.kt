@@ -64,14 +64,27 @@ object Converter {
                 }
                 Kind.IMAGE -> {
                     val bmp = Docs.decodeBitmap(ctx, uri)
-                    val out = Storage.openOutput(ctx, "$base.${target.id}")
-                    try {
-                        Docs.writeBitmap(bmp, target.id, 92, out.stream)
-                    } catch (e: Throwable) {
-                        out.abort(); throw e
+                    if (target.id in setOf("bmp", "gif", "tiff", "ico")) {
+                        // Formats que le système Android ne sait pas écrire : passage par FFmpeg
+                        val work = Storage.workDir(ctx, "img")
+                        val png = File(work, "in.png")
+                        png.outputStream().use { Docs.writeBitmap(bmp, "png", 100, it) }
+                        bmp.recycle()
+                        val tmp = File(work, "out.${target.id}")
+                        val extra = if (target.id == "ico") listOf("-vf", "scale=256:256:force_original_aspect_ratio=decrease") else emptyList()
+                        FF.run(listOf("-i", png.absolutePath) + extra + tmp.absolutePath, 0L) { }
+                        saved += Storage.save(ctx, tmp, "$base.${target.id}")
+                        work.deleteRecursively()
+                    } else {
+                        val out = Storage.openOutput(ctx, "$base.${target.id}")
+                        try {
+                            Docs.writeBitmap(bmp, target.id, 92, out.stream)
+                        } catch (e: Throwable) {
+                            out.abort(); throw e
+                        }
+                        bmp.recycle()
+                        saved += out.finish()
                     }
-                    bmp.recycle()
-                    saved += out.finish()
                 }
                 Kind.TEXT, Kind.DOCX, Kind.PDF -> {
                     if (kind == Kind.PDF && (target.id == "png" || target.id == "jpg")) {
@@ -83,15 +96,19 @@ object Converter {
                         }
                         saved += out.finish()
                     } else {
-                        val text = when (kind) {
+                        val srcExt = if (kind == Kind.TEXT) Storage.extension(name) else ""
+                        val raw = when (kind) {
                             Kind.DOCX -> Docs.docxToText(ctx, uri)
                             Kind.PDF -> Docs.pdfToText(ctx, uri)
-                            else -> Docs.readText(ctx, uri, name)
+                            else -> Docs.readRaw(ctx, uri)
                         }
                         val out = Storage.openOutput(ctx, "$base.${target.id}")
                         try {
-                            if (target.id == "pdf") Docs.textToPdf(text, out.stream)
-                            else out.stream.write(text.toByteArray(Charsets.UTF_8))
+                            when (target.id) {
+                                "pdf" -> Docs.textToPdf(DataConv.forPdf(raw, srcExt), out.stream)
+                                "docx" -> DataConv.textToDocx(DataConv.plain(raw, srcExt), out.stream)
+                                else -> out.stream.write(DataConv.convert(raw, srcExt, target.id).toByteArray(Charsets.UTF_8))
+                            }
                         } catch (e: Throwable) {
                             out.abort(); throw e
                         }
