@@ -5,7 +5,11 @@ plugins {
 
 android {
     namespace = "com.superessence.app"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     defaultConfig {
         applicationId = "com.superessence.app"
