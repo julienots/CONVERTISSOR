@@ -353,7 +353,7 @@ fun TextToolsScreen(onBack: () -> Unit) {
     val ctx = LocalContext.current
     var text by rememberSaveable { mutableStateOf("") }
     var result by rememberSaveable { mutableStateOf("") }
-    val actions: List<Pair<String, (String) -> String>> = listOf(
+    val actions: List<Pair<String, (String) -> String>> = listOf<Pair<String, (String) -> String>>(
         "MAJUSCULES" to { s -> s.uppercase() },
         "minuscules" to { s -> s.lowercase() },
         "Première Lettre" to { s -> s.lowercase().split(" ").joinToString(" ") { w -> w.replaceFirstChar { it.titlecase() } } },

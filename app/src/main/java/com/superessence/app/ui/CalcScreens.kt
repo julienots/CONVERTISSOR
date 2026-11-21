@@ -548,7 +548,7 @@ fun BasesScreen(onBack: () -> Unit) {
             Row2 { NumField(gcdA, { gcdA = it }, "a", Modifier.weight(1f), decimal = false); NumField(gcdB, { gcdB = it }, "b", Modifier.weight(1f), decimal = false) }
             val a = gcdA.trim().toLongOrNull(); val b = gcdB.trim().toLongOrNull()
             if (a != null && b != null && a > 0 && b > 0) {
-                var x = a; var y = b
+                var x: Long = a; var y: Long = b
                 while (y != 0L) { val t = x % y; x = y; y = t }
                 ResultRow("PGCD", x.toString())
                 ResultRow("PPCM", (a / x * b).toString())
