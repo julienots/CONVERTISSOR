@@ -215,7 +215,7 @@ class TransferService : Service() {
                     Transfer.addReceived(ReceivedFile(dest.absolutePath, dest.name, size, sender, dest))
                 }
                 DataOutputStream(s.getOutputStream()).apply { writeInt(1); flush() }
-                Transfer.log("✅ $count fichier(s) reçus de $sender en ${meter.elapsedText()} : appuie sur « Télécharger »")
+                Transfer.log("Terminé : $count fichier(s) reçus de $sender en ${meter.elapsedText()} : appuie sur « Télécharger »")
             } catch (e: Throwable) {
                 Transfer.log("❌ Réception échouée : ${e.message ?: e.javaClass.simpleName}")
             } finally {
@@ -278,7 +278,7 @@ class TransferService : Service() {
             out.flush()
             val ack = DataInputStream(s.getInputStream()).readInt()
             if (ack != 1) throw IOException("Le destinataire a refusé")
-            Transfer.log("✅ ${items.size} fichier(s) envoyés à ${peer.name} en ${meter.elapsedText()} (${Storage.humanSize(total)})")
+            Transfer.log("Terminé : ${items.size} fichier(s) envoyés à ${peer.name} en ${meter.elapsedText()} (${Storage.humanSize(total)})")
         }
         releaseWakeIfIdle()
     }

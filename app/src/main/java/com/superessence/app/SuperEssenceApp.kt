@@ -8,6 +8,7 @@ class SuperEssenceApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        com.superessence.app.core.Prefs.load()
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_TRANSFER, "Tâches en cours", NotificationManager.IMPORTANCE_LOW)

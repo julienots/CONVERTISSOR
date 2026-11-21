@@ -46,11 +46,11 @@ import kotlin.math.min
 private fun done(files: List<SavedFile>, text: String? = null) =
     JobState.Done("Terminé ! ${files.size} fichier(s) dans Téléchargements/${Storage.FOLDER}", files, text)
 
-private fun open(ctx: Context, uri: Uri): InputStream =
+internal fun open(ctx: Context, uri: Uri): InputStream =
     ctx.contentResolver.openInputStream(uri) ?: error("Fichier illisible")
 
 /** Empêche PDFBox de fermer le ZIP après chaque page. */
-private class NoClose(private val out: java.io.OutputStream) : java.io.OutputStream() {
+internal class NoClose(private val out: java.io.OutputStream) : java.io.OutputStream() {
     override fun write(b: Int) = out.write(b)
     override fun write(b: ByteArray, off: Int, len: Int) = out.write(b, off, len)
     override fun flush() = out.flush()
@@ -324,7 +324,7 @@ object PdfTools {
 
 object InfoTools {
 
-    private fun hashes(ctx: Context, uri: Uri, p: Progress): String {
+    internal fun hashes(ctx: Context, uri: Uri, p: Progress): String {
         val algs = listOf("MD5", "SHA-1", "SHA-256").map { MessageDigest.getInstance(it) }
         val total = Storage.size(ctx, uri).coerceAtLeast(1)
         var read = 0L
@@ -384,7 +384,7 @@ object InfoTools {
         return if (b > 0 && a > 0) "· %.0f i/s".format(a / b) else ""
     }
 
-    private suspend fun ocr(ctx: Context, uri: Uri): String = suspendCancellableCoroutine { cont ->
+    internal suspend fun ocr(ctx: Context, uri: Uri): String = suspendCancellableCoroutine { cont ->
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         recognizer.process(InputImage.fromFilePath(ctx, uri))
             .addOnSuccessListener { cont.resume(it.text) }

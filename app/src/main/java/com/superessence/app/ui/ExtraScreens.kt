@@ -68,6 +68,7 @@ import com.superessence.app.tools.Apps
 import com.superessence.app.tools.MediaTools
 import com.superessence.app.tools.Speech
 import com.superessence.app.tools.Units
+import com.superessence.app.tools.TextOps
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -367,7 +368,12 @@ fun TextToolsScreen(onBack: () -> Unit) {
         "Sans accents" to { s -> java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "") },
         "Extraire les liens" to { s -> Regex("https?://\\S+").findAll(s).joinToString("\n") { it.value } },
         "Extraire les e-mails" to { s -> Regex("[\\w.+-]+@[\\w-]+\\.[\\w.]+").findAll(s).joinToString("\n") { it.value } },
-    )
+    ) + TextOps.all
+    var find by rememberSaveable { mutableStateOf("") }
+    var repl by rememberSaveable { mutableStateOf("") }
+    var regex by rememberSaveable { mutableStateOf(false) }
+    var prefix by rememberSaveable { mutableStateOf("") }
+    var suffix by rememberSaveable { mutableStateOf("") }
     ToolScaffold("Outils texte", onBack) {
         Section("Texte") {
             OutlinedTextField(text, { text = it }, label = { Text("Écris ou colle ton texte") }, minLines = 4, modifier = Modifier.fillMaxWidth())
@@ -375,7 +381,35 @@ fun TextToolsScreen(onBack: () -> Unit) {
             Hint("${text.length} caractères · $words mots · ${if (text.isEmpty()) 0 else text.lines().size} lignes · ≈ ${(words / 200.0).let { if (it < 1) "<1" else "%.0f".format(it) }} min de lecture")
         }
         Section("Transformer") {
-            ChoiceChips(actions, null, { it.first }) { result = it.second(text) }
+            ChoiceChips(actions, null, { it.first }) { result = runCatching { it.second(text) }.getOrElse { e -> "Erreur : ${e.message}" } }
+        }
+        Section("Rechercher / remplacer") {
+            Row2 {
+                OutlinedTextField(find, { find = it }, label = { Text("Chercher") }, singleLine = true, modifier = Modifier.weight(1f))
+                OutlinedTextField(repl, { repl = it }, label = { Text("Remplacer par") }, singleLine = true, modifier = Modifier.weight(1f))
+            }
+            SwitchRow("Expression régulière", regex) { regex = it }
+            if (find.isNotEmpty()) {
+                val count = runCatching { if (regex) Regex(find).findAll(text).count() else text.windowed(find.length).count { it == find } }.getOrDefault(0)
+                Hint("$count occurrence(s)")
+            }
+            TextButton(onClick = {
+                result = runCatching { if (regex) text.replace(Regex(find), repl) else text.replace(find, repl) }.getOrElse { "Expression invalide" }
+            }, enabled = find.isNotEmpty()) { Text("Remplacer tout") }
+        }
+        Section("Ajouter au début / à la fin de chaque ligne") {
+            Row2 {
+                OutlinedTextField(prefix, { prefix = it }, label = { Text("Début") }, singleLine = true, modifier = Modifier.weight(1f))
+                OutlinedTextField(suffix, { suffix = it }, label = { Text("Fin") }, singleLine = true, modifier = Modifier.weight(1f))
+            }
+            TextButton(onClick = { result = text.lines().joinToString("\n") { prefix + it + suffix } }) { Text("Appliquer") }
+        }
+        Section("Générer") {
+            Row {
+                TextButton(onClick = { result = TextOps.lorem(1) }) { Text("Lorem ipsum (1 §)") }
+                TextButton(onClick = { result = TextOps.lorem(5) }) { Text("5 paragraphes") }
+                TextButton(onClick = { result = java.util.UUID.randomUUID().toString() }) { Text("UUID") }
+            }
         }
         if (result.isNotEmpty()) {
             Section("Résultat") {

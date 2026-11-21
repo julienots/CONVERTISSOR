@@ -96,8 +96,8 @@ fun Section(title: String? = null, content: @Composable ColumnScope.() -> Unit) 
     Column(
         Modifier
             .fillMaxWidth()
-            .background(SE.Surface, RoundedCornerShape(20.dp))
-            .border(1.dp, SE.SurfaceHi, RoundedCornerShape(20.dp))
+            .background(SE.Surface, RoundedCornerShape(14.dp))
+            .border(1.dp, SE.SurfaceHi, RoundedCornerShape(14.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -117,8 +117,8 @@ fun BigButton(text: String, icon: ImageVector? = null, enabled: Boolean = true, 
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = color, contentColor = Color(0xFF00121F)),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = color, contentColor = SE.OnAccent),
     ) {
         if (icon != null) {
             Icon(icon, null)
@@ -139,7 +139,7 @@ fun <T> ChoiceChips(options: List<T>, selected: T?, label: (T) -> String, onSele
                 label = { Text(label(o)) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = SE.Cyan,
-                    selectedLabelColor = Color(0xFF00121F),
+                    selectedLabelColor = SE.OnAccent,
                 ),
             )
         }
@@ -193,9 +193,9 @@ fun PickBox(text: String, onClick: () -> Unit) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(96.dp)
-            .border(2.dp, SE.glow, RoundedCornerShape(20.dp))
-            .background(SE.Surface, RoundedCornerShape(20.dp))
+            .height(72.dp)
+            .border(1.dp, SE.Muted.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .background(SE.Surface, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -225,7 +225,7 @@ fun JobPanel(key: String) {
             OutlinedButton(onClick = { Jobs.cancel(key) }) { Text("Annuler") }
         }
         is JobState.Done -> Section {
-            Text("✅ " + s.message, color = SE.Green, fontWeight = FontWeight.SemiBold)
+            Text(s.message, color = SE.Green, fontWeight = FontWeight.SemiBold)
             s.files.take(20).forEach { f ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
@@ -250,7 +250,7 @@ fun JobPanel(key: String) {
             }
         }
         is JobState.Failed -> Section {
-            Text("⚠️ " + s.error, color = SE.Red)
+            Text("Erreur : " + s.error, color = SE.Red)
             TextButton(onClick = { Jobs.reset(key) }) { Text("OK") }
         }
     }

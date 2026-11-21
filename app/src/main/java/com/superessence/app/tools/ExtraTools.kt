@@ -199,10 +199,29 @@ object Units {
             MeasureUnit("To", 1024.0 * 1024 * 1024 * 1024), MeasureUnit("bit", 0.125), MeasureUnit("Mbit", 131072.0),
         ),
         "Énergie" to listOf(MeasureUnit("J", 1.0), MeasureUnit("kJ", 1000.0), MeasureUnit("cal", 4.184), MeasureUnit("kcal", 4184.0), MeasureUnit("kWh", 3_600_000.0)),
-        "Pression" to listOf(MeasureUnit("Pa", 1.0), MeasureUnit("hPa", 100.0), MeasureUnit("bar", 100_000.0), MeasureUnit("atm", 101_325.0), MeasureUnit("psi", 6894.757)),
+        "Pression" to listOf(MeasureUnit("Pa", 1.0), MeasureUnit("hPa", 100.0), MeasureUnit("bar", 100_000.0), MeasureUnit("atm", 101_325.0), MeasureUnit("psi", 6894.757), MeasureUnit("mmHg", 133.322)),
+        "Cuisine" to listOf(
+            MeasureUnit("ml", 1.0), MeasureUnit("cl", 10.0), MeasureUnit("dl", 100.0), MeasureUnit("l", 1000.0), MeasureUnit("cuillère à café", 5.0),
+            MeasureUnit("cuillère à soupe", 15.0), MeasureUnit("verre", 200.0), MeasureUnit("tasse (cup US)", 236.588), MeasureUnit("fl oz", 29.5735), MeasureUnit("pinte UK", 568.261),
+        ),
+        "Angle" to listOf(MeasureUnit("degré", 1.0), MeasureUnit("radian", 57.29577951), MeasureUnit("grade", 0.9), MeasureUnit("minute d'arc", 1 / 60.0), MeasureUnit("tour", 360.0)),
+        "Puissance" to listOf(MeasureUnit("W", 1.0), MeasureUnit("kW", 1000.0), MeasureUnit("ch (cheval)", 735.49875), MeasureUnit("hp", 745.699872), MeasureUnit("BTU/h", 0.29307107)),
+        "Débit internet" to listOf(
+            MeasureUnit("kbit/s", 1000.0), MeasureUnit("Mbit/s", 1e6), MeasureUnit("Gbit/s", 1e9), MeasureUnit("Ko/s", 8192.0), MeasureUnit("Mo/s", 8_388_608.0), MeasureUnit("Go/s", 8_589_934_592.0),
+        ),
+        "Fréquence" to listOf(MeasureUnit("Hz", 1.0), MeasureUnit("kHz", 1000.0), MeasureUnit("MHz", 1e6), MeasureUnit("GHz", 1e9), MeasureUnit("tr/min", 1 / 60.0)),
+        "Force" to listOf(MeasureUnit("N", 1.0), MeasureUnit("kN", 1000.0), MeasureUnit("kgf", 9.80665), MeasureUnit("lbf", 4.448222)),
+        "Consommation" to listOf(MeasureUnit("L/100 km", 0.0), MeasureUnit("km/L", 0.0), MeasureUnit("mpg (US)", 0.0), MeasureUnit("mpg (UK)", 0.0)),
+        "Longueur (typo)" to listOf(MeasureUnit("pt", 0.352778), MeasureUnit("px (96 dpi)", 0.264583), MeasureUnit("mm", 1.0), MeasureUnit("pouce", 25.4), MeasureUnit("cicéro", 4.512)),
     )
 
     fun convert(cat: String, value: Double, from: MeasureUnit, to: MeasureUnit): Double {
+        if (cat == "Consommation") {
+            // Tout ramener en L/100 km (relation inverse pour km/L et mpg).
+            fun toL100(v: Double, u: String) = when (u) { "km/L" -> 100 / v; "mpg (US)" -> 235.214583 / v; "mpg (UK)" -> 282.480936 / v; else -> v }
+            val l = toL100(value, from.name)
+            return toL100(l, to.name)
+        }
         if (cat == "Température") {
             val c = when (from.name) { "°F" -> (value - 32) * 5 / 9; "K" -> value - 273.15; else -> value }
             return when (to.name) { "°F" -> c * 9 / 5 + 32; "K" -> c + 273.15; else -> c }
@@ -222,5 +241,5 @@ object Units {
         }
     }
 
-    val currencies = listOf("EUR", "USD", "GBP", "CHF", "CAD", "JPY", "CNY", "BRL", "INR", "TRY", "AUD", "SEK", "NOK", "PLN", "MXN", "ZAR")
+    val currencies = listOf("EUR", "USD", "GBP", "CHF", "CAD", "JPY", "CNY", "BRL", "INR", "TRY", "AUD", "SEK", "NOK", "PLN", "MXN", "ZAR", "HKD", "SGD", "NZD", "DKK", "CZK", "HUF", "RON", "KRW", "THB", "IDR", "ILS", "PHP", "MYR", "ISK", "BGN")
 }

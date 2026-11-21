@@ -16,9 +16,9 @@ import java.io.File
 /** Outils vidéo et audio (FFmpeg). */
 object MediaTools {
 
-    private val MP3 = listOf("-vn", "-c:a", "libmp3lame", "-q:a", "2")
+    internal val MP3 = listOf("-vn", "-c:a", "libmp3lame", "-q:a", "2")
 
-    private fun done(files: List<SavedFile>) =
+    internal fun done(files: List<SavedFile>) =
         JobState.Done("Terminé ! ${files.size} fichier(s) dans Téléchargements/${Storage.FOLDER}", files)
 
     /** Convertit « 1:30 », « 90 » ou « 0:01:30 » en secondes (texte pour FFmpeg). */
@@ -28,10 +28,10 @@ object MediaTools {
         return String.format(java.util.Locale.US, "%.3f", sec)
     }
 
-    private fun num(v: String, def: Double) = v.replace(',', '.').toDoubleOrNull() ?: def
+    internal fun num(v: String, def: Double) = v.replace(',', '.').toDoubleOrNull() ?: def
 
     /** Applique une commande à chaque fichier et enregistre le résultat. */
-    private suspend fun Progress.each(
+    internal suspend fun Progress.each(
         ctx: Context,
         files: List<Uri>,
         suffix: String,
@@ -52,7 +52,7 @@ object MediaTools {
         return done(out)
     }
 
-    private suspend fun Progress.single(ctx: Context, args: List<String>, durMs: Long, outName: String): JobState.Done {
+    internal suspend fun Progress.single(ctx: Context, args: List<String>, durMs: Long, outName: String): JobState.Done {
         val tmp = File(Storage.workDir(ctx, "media"), "out." + Storage.extension(outName))
         FF.run(args + tmp.absolutePath, durMs) { update(it, "Traitement…") }
         val saved = Storage.save(ctx, tmp, outName)
@@ -60,9 +60,9 @@ object MediaTools {
         return done(listOf(saved))
     }
 
-    private val sameVideo: (String) -> String = { if (it in setOf("mp4", "mkv", "mov", "webm", "avi", "3gp")) it else "mp4" }
-    private val mp4: (String) -> String = { "mp4" }
-    private val mp3: (String) -> String = { "mp3" }
+    internal val sameVideo: (String) -> String = { if (it in setOf("mp4", "mkv", "mov", "webm", "avi", "3gp")) it else "mp4" }
+    internal val mp4: (String) -> String = { "mp4" }
+    internal val mp3: (String) -> String = { "mp3" }
     private val speeds = listOf("0.5" to "×0,5", "0.75" to "×0,75", "1.25" to "×1,25", "1.5" to "×1,5", "2" to "×2")
 
     val videoOps = listOf(

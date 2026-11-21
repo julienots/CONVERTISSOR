@@ -35,7 +35,7 @@ class OutputTarget(
         counting.close()
         val size = maxOf(written, counting.count)
         onFinish(size)
-        return SavedFile(name, uri, size, mime)
+        return SavedFile(name, uri, size, mime).also { History.add(it) }
     }
 
     fun abort() {

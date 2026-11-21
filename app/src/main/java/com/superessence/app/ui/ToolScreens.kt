@@ -583,27 +583,18 @@ fun AboutScreen(onBack: () -> Unit) {
             Image(
                 painterResource(R.drawable.app_logo), "Logo",
                 Modifier
-                    .size(160.dp)
-                    .clip(RoundedCornerShape(36.dp)),
+                    .size(96.dp)
+                    .clip(RoundedCornerShape(22.dp)),
             )
         }
         Section {
             Text("Fluxo", fontSize = 24.sp, fontWeight = FontWeight.Black)
             Text("Version ${BuildConfig.VERSION_NAME}", color = SE.Muted)
-            Text("Créé par SuperEssence Studio", color = SE.Cyan, fontWeight = FontWeight.SemiBold)
+            Text("Par SuperEssence Studio", color = SE.Muted)
         }
-        Section("Ce que fait l'application") {
-            Hint("• Transfert ultra-rapide en Wi‑Fi local entre appareils Fluxo, sans limite de taille")
-            Hint("• Conversion audio, vidéo, image, PDF, texte, Word, archives")
-            Hint("• XAPK / APKS / APKM → APK unique")
-            Hint("• Liens YouTube → MP3 / M4A / MP4")
-            Hint("• Vidéo → toutes les images en ZIP")
-            Hint("• Transcription vidéo → texte (hors connexion)")
-            Hint("• Compresseur de fichiers")
-            Hint("• Éditeurs vidéo, audio et photo · Outils PDF")
-            Hint("• Photo → texte (OCR), Texte → voix, Dictaphone")
-            Hint("• QR codes, Unités & devises, Outils texte, Infos fichier")
-            Hint("• Sauvegarde des applis installées en APK")
+        Section("En bref") {
+            Hint("Fluxo regroupe ${tools.size - 2} outils qui marchent sans compte ni publicité : envoyer des fichiers en Wi‑Fi, convertir, modifier des vidéos, sons, photos et PDF, calculer, et plein de petits outils du quotidien.")
+            Hint("La plupart fonctionnent hors connexion. Seuls les liens YouTube, les taux de change et le premier téléchargement d'une langue de transcription ont besoin d'internet.")
         }
         Section("Où sont mes fichiers ?") {
             Hint("Tous les résultats sont dans Téléchargements/Fluxo (et Téléchargements/Fluxo/Reçus pour les transferts).")

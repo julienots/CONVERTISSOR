@@ -37,6 +37,16 @@ import com.superessence.app.ui.SuperEssenceTheme
 import com.superessence.app.ui.TranscribeScreen
 import com.superessence.app.ui.TransferScreen
 import com.superessence.app.ui.YoutubeScreen
+import com.superessence.app.ui.*
+import com.superessence.app.tools.MoreMedia
+import com.superessence.app.tools.MoreImages
+import com.superessence.app.tools.MorePdf
+import com.superessence.app.tools.MoreInfo
+import com.superessence.app.core.Prefs
+import android.graphics.Color as AColor
+import android.view.WindowManager
+import androidx.activity.SystemBarStyle
+import androidx.compose.foundation.isSystemInDarkTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,12 +58,21 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             SuperEssenceTheme {
+                val dark = when (Prefs.theme) { "light" -> false; "dark" -> true; else -> isSystemInDarkTheme() }
+                LaunchedEffect(dark) {
+                    val style = if (dark) SystemBarStyle.dark(AColor.TRANSPARENT) else SystemBarStyle.light(AColor.TRANSPARENT, AColor.TRANSPARENT)
+                    enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                }
+                LaunchedEffect(Prefs.keepScreenOn) {
+                    if (Prefs.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
                 val nav = rememberNavController()
                 val sharedText by Shared.sharedText.collectAsState()
                 LaunchedEffect(sharedText) {
                     if (sharedText != null && nav.currentDestination?.route != "youtube") nav.navigate("youtube")
                 }
-                val back: () -> Unit = { nav.popBackStack() }
+                val back: () -> Unit = { if (!nav.popBackStack()) finish() }
                 NavHost(nav, startDestination = "home") {
                     composable("home") { HomeScreen { nav.navigate(it) } }
                     composable("transfer") { TransferScreen(back) }
@@ -64,18 +83,41 @@ class MainActivity : ComponentActivity() {
                     composable("transcribe") { TranscribeScreen(back) }
                     composable("compress") { CompressScreen(back) }
                     composable("about") { AboutScreen(back) }
-                    composable("video") { OpScreen("Éditeur vidéo", "video", "Couper, accélérer, pivoter, fusionner des vidéos, changer la musique, créer un diaporama…", MediaTools.videoOps, back) }
-                    composable("audio") { OpScreen("Éditeur audio", "audio", "Couper (sonnerie), volume, normaliser, basses, karaoké, fondus, fusion… Résultats en MP3.", MediaTools.audioOps, back) }
-                    composable("image") { OpScreen("Éditeur photo", "image", "Redimensionner, pivoter, noir et blanc, recadrer, filigrane, collage, supprimer le GPS…", ImageTools.ops, back) }
-                    composable("pdf") { OpScreen("Outils PDF", "pdf", "Fusionner, extraire, séparer, pivoter, supprimer des pages, protéger ou déverrouiller un PDF.", PdfTools.ops, back) }
-                    composable("ocr") { OpScreen("Photo → texte", "ocr", "Choisis des photos ou captures d'écran contenant du texte.", InfoTools.ocrOps, back) }
-                    composable("info") { OpScreen("Infos fichier", "info", "Tout savoir sur un fichier : format, durée, résolution, appareil photo, GPS, empreintes.", InfoTools.ops, back) }
+                    composable("video") { OpScreen("Vidéo", "video", "Choisis une ou plusieurs vidéos, puis une action.", MediaTools.videoOps + MoreMedia.video, back) }
+                    composable("audio") { OpScreen("Audio", "audio", "Choisis un ou plusieurs sons, puis une action. Résultats en MP3.", MediaTools.audioOps + MoreMedia.audio, back) }
+                    composable("image") { OpScreen("Photo", "image", "Choisis une ou plusieurs photos, puis une action.", ImageTools.ops + MoreImages.ops, back) }
+                    composable("pdf") { OpScreen("PDF", "pdf", "Choisis un ou plusieurs PDF, puis une action.", PdfTools.ops + MorePdf.ops, back) }
+                    composable("ocr") { OpScreen("Photo → texte", "ocr", "Choisis des photos ou captures d'écran contenant du texte.", InfoTools.ocrOps + MoreInfo.ocrOps, back) }
+                    composable("info") { OpScreen("Infos d'un fichier", "info", "Choisis un ou plusieurs fichiers.", InfoTools.ops + MoreInfo.ops, back) }
                     composable("qr") { QrScreen(back) }
                     composable("tts") { TtsScreen(back) }
                     composable("rec") { RecorderScreen(back) }
                     composable("units") { UnitsScreen(back) }
                     composable("text") { TextToolsScreen(back) }
                     composable("apps") { AppsScreen(back) }
+                    composable("files") { FilesScreen(back) }
+                    composable("settings") { SettingsScreen(back) }
+                    composable("calc") { CalcScreen(back) }
+                    composable("percent") { PercentScreen(back) }
+                    composable("money") { MoneyScreen(back) }
+                    composable("dates") { DatesScreen(back) }
+                    composable("health") { HealthScreen(back) }
+                    composable("everyday") { EverydayScreen(back) }
+                    composable("bases") { BasesScreen(back) }
+                    composable("timer") { TimerScreen(back) }
+                    composable("notes") { NotesScreen(back) }
+                    composable("todo") { TodoScreen(back) }
+                    composable("counter") { CounterScreen(back) }
+                    composable("random") { RandomScreen(back) }
+                    composable("password") { PasswordScreen(back) }
+                    composable("colors") { ColorsScreen(back) }
+                    composable("clock") { WorldClockScreen(back) }
+                    composable("torch") { TorchScreen(back) }
+                    composable("level") { LevelScreen(back) }
+                    composable("sound") { SoundMeterScreen(back) }
+                    composable("tone") { ToneScreen(back) }
+                    composable("device") { DeviceScreen(back) }
+                    composable("screentest") { ScreenTestScreen(back) }
                 }
             }
         }
