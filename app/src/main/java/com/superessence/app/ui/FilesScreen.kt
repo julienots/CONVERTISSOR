@@ -192,7 +192,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         Section("Apparence") {
             Text("Thème")
             val themes = listOf("system" to "Comme le téléphone", "light" to "Clair", "dark" to "Sombre")
-            ChoiceChips(themes, themes.firstOrNull { it.first == Prefs.theme }, { it.second }) { Prefs.setTheme(it.first) }
+            ChoiceChips(themes, themes.firstOrNull { it.first == Prefs.theme }, { it.second }) { Prefs.changeTheme(it.first) }
             Text("Couleur")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Accents.forEachIndexed { i, a ->
@@ -202,7 +202,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                             .size(36.dp)
                             .clip(CircleShape)
                             .background(c)
-                            .clickable { Prefs.setAccent(i) },
+                            .clickable { Prefs.changeAccent(i) },
                         contentAlignment = Alignment.Center,
                     ) {
                         if (Prefs.accent == i) Icon(Icons.Filled.Check, a.first, tint = SE.OnAccent, modifier = Modifier.size(20.dp))
@@ -211,14 +211,14 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
         }
         Section("Accueil") {
-            SwitchRow("Affichage en liste", Prefs.listLayout, "Sinon : grille de cartes") { Prefs.setListLayout(it) }
-            SwitchRow("Afficher les descriptions", Prefs.showDescriptions) { Prefs.setShowDescriptions(it) }
+            SwitchRow("Affichage en liste", Prefs.listLayout, "Sinon : grille de cartes") { Prefs.changeListLayout(it) }
+            SwitchRow("Afficher les descriptions", Prefs.showDescriptions) { Prefs.changeShowDescriptions(it) }
             TextButton(onClick = { resetHome(ctx); toast(ctx, "Favoris et récents effacés") }) { Text("Effacer favoris et récents") }
         }
         Section("Comportement") {
-            SwitchRow("Garder l'écran allumé", Prefs.keepScreenOn, "Pendant que l'appli est ouverte") { Prefs.setKeepScreenOn(it) }
-            SwitchRow("Vibrations", Prefs.vibrate, "Minuteur, compteur, dés…") { Prefs.setVibrate(it) }
-            SwitchRow("Demander avant de supprimer", Prefs.confirmDelete) { Prefs.setConfirmDelete(it) }
+            SwitchRow("Garder l'écran allumé", Prefs.keepScreenOn, "Pendant que l'appli est ouverte") { Prefs.changeKeepScreenOn(it) }
+            SwitchRow("Vibrations", Prefs.vibrate, "Minuteur, compteur, dés…") { Prefs.changeVibrate(it) }
+            SwitchRow("Demander avant de supprimer", Prefs.confirmDelete) { Prefs.changeConfirmDelete(it) }
         }
         Section("Stockage") {
             ResultRow("Fichiers temporaires", if (cacheSize < 0) "…" else Storage.humanSize(cacheSize))

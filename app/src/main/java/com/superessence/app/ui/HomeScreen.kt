@@ -175,7 +175,7 @@ fun HomeScreen(open: (String) -> Unit) {
         item(span = { GridItemSpan(cols) }) {
             Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Fluxo", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = SE.Text, modifier = Modifier.weight(1f))
-                IconButton(onClick = { Prefs.setListLayout(!list) }) {
+                IconButton(onClick = { Prefs.changeListLayout(!list) }) {
                     Icon(if (list) Icons.Filled.GridView else Icons.Filled.ViewList, if (list) "Afficher en grille" else "Afficher en liste", tint = SE.Muted)
                 }
                 IconButton(onClick = { open("files") }) { Icon(Icons.Filled.FolderOpen, "Mes fichiers", tint = SE.Muted) }

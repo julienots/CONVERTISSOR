@@ -38,13 +38,13 @@ object Prefs {
         confirmDelete = sp.getBoolean("confirm_delete", true)
     }
 
-    fun setTheme(v: String) { theme = v; sp.edit().putString("theme", v).apply() }
-    fun setAccent(v: Int) { accent = v; sp.edit().putInt("accent", v).apply() }
-    fun setListLayout(v: Boolean) { listLayout = v; sp.edit().putBoolean("list", v).apply() }
-    fun setShowDescriptions(v: Boolean) { showDescriptions = v; sp.edit().putBoolean("desc", v).apply() }
-    fun setKeepScreenOn(v: Boolean) { keepScreenOn = v; sp.edit().putBoolean("screen_on", v).apply() }
-    fun setVibrate(v: Boolean) { vibrate = v; sp.edit().putBoolean("vibrate", v).apply() }
-    fun setConfirmDelete(v: Boolean) { confirmDelete = v; sp.edit().putBoolean("confirm_delete", v).apply() }
+    fun changeTheme(v: String) { theme = v; sp.edit().putString("theme", v).apply() }
+    fun changeAccent(v: Int) { accent = v; sp.edit().putInt("accent", v).apply() }
+    fun changeListLayout(v: Boolean) { listLayout = v; sp.edit().putBoolean("list", v).apply() }
+    fun changeShowDescriptions(v: Boolean) { showDescriptions = v; sp.edit().putBoolean("desc", v).apply() }
+    fun changeKeepScreenOn(v: Boolean) { keepScreenOn = v; sp.edit().putBoolean("screen_on", v).apply() }
+    fun changeVibrate(v: Boolean) { vibrate = v; sp.edit().putBoolean("vibrate", v).apply() }
+    fun changeConfirmDelete(v: Boolean) { confirmDelete = v; sp.edit().putBoolean("confirm_delete", v).apply() }
 
     /** Petit stockage texte libre pour les outils (notes, listes, compteurs…). */
     fun getString(key: String, def: String = ""): String = sp.getString("data_$key", def) ?: def
