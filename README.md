@@ -10,31 +10,52 @@ Va dans l'onglet **Releases** du dépôt et télécharge `Fluxo.apk` (dernière 
 L'APK est compilé automatiquement par GitHub Actions à chaque push (onglet **Actions**,
 artefact `Fluxo-apk`). Android 8.0 ou plus est requis.
 
+Compilé avec AGP 9.5, Gradle 9.9, Kotlin 2.4, Compose (BOM 2026.11) et le SDK Android 37.
+
 ## Fonctions
 
+L'accueil est une simple liste (ou une grille) classée en 6 rubriques, avec une recherche,
+des favoris (appui long) et les outils récents. Thème clair, sombre ou comme le téléphone,
+6 couleurs au choix (**Réglages**). Tous les fichiers créés se retrouvent dans **Mes fichiers**.
+
+### Fichiers
 | Outil | Détails |
 |---|---|
-| **Transfert** | Envoi direct d'appareil à appareil en Wi‑Fi local (TCP), sans limite de taille (2 Go et plus). Découverte automatique, QR code, ou IP manuelle. Sans Wi‑Fi : le récepteur crée un point d'accès local. La vitesse dépend du Wi‑Fi (souvent 20 à 60 Mo/s en 5 GHz). |
-| **Convertir** | Vidéo → MP3, M4A, WAV, OGG, FLAC, OPUS, MP4, MKV, WEBM, AVI, MOV, GIF, images · Audio → tous formats audio · Images (JPG, PNG, WEBP, HEIC…) → JPG, PNG, WEBP, BMP, GIF, TIFF, ICO, PDF · Texte/HTML/Markdown → PDF, Word, HTML · JSON ↔ CSV ↔ XML · Word → TXT/PDF/HTML · PDF → TXT/Word · PDF → TXT ou images · ZIP/7Z/RAR/TAR/GZ → extraction · tout → ZIP |
-| **XAPK → APK** | XAPK, APKS, APKM ou ZIP : fusion des splits en **un seul APK** (ARSCLib) re-signé sur l'appareil, installation directe des splits, ou extraction. |
-| **Liens & musique** | YouTube, **YouTube Music** (morceaux, albums, playlists), SoundCloud… → MP3, M4A, FLAC, WAV, OGG, OPUS ou MP4 (choix du débit / de la résolution), titre + artiste + pochette intégrés. **Recherche de morceaux** dans l'app. N'importe quel **lien direct vers un fichier** (PDF, image, ZIP, vidéo… ; Dropbox et Google Drive inclus) : téléchargement tel quel ou conversion. |
-| **Vidéo → Images** | Extrait les images d'une vidéo (de 1 toutes les 5 s jusqu'à toutes) dans un ZIP. |
-| **Transcription** | Vidéo/audio → texte `.txt` + sous-titres `.srt`, hors connexion (Vosk). Modèle téléchargé une fois par langue. |
-| **Compresseur** | Images, vidéos, audio optimisés, ou tout regrouper dans un ZIP. |
-| **Éditeur vidéo** | Couper, retirer le son, vitesse, pivoter, redimensionner, à l'envers, capture, changer la musique, fusionner, photos → diaporama. |
-| **Éditeur audio** | Couper (sonnerie), volume, normaliser, vitesse, basses, karaoké, fondus, à l'envers, fusion, mono. |
-| **Éditeur photo** | Redimensionner, pivoter, noir et blanc, carré, filigrane, supprimer EXIF/GPS, réduire le poids, collage. |
-| **Outils PDF** | Fusionner, extraire, séparer, pivoter, supprimer des pages, protéger / déverrouiller, images → PDF. |
-| **Photo → texte** | OCR hors connexion (ML Kit) vers TXT ou PDF, lecture de QR code dans une image. |
-| **Texte → voix** | Synthèse vocale en MP3 (voix du téléphone). |
-| **Dictaphone** | Enregistrement M4A ou MP3. |
-| **QR codes** | Scanner, créer (texte, lien, Wi‑Fi, e-mail, téléphone, SMS). |
-| **Unités & devises** | 10 catégories d'unités + taux de change du jour. |
-| **Outils texte** | Casse, tri, doublons, Base64, URL, accents, extraction de liens/e-mails, compteur. |
-| **Infos fichier** | Format, codecs, durée, résolution, EXIF, GPS, MD5/SHA-1/SHA-256. |
-| **Mes applis → APK** | Sauvegarde l'APK (ou .apks) de n'importe quelle appli installée. |
+| **Mes fichiers** | Historique de tout ce que Fluxo a créé : recherche, tri par type, ouvrir, partager, supprimer. |
+| **Envoyer à un appareil** | Wi‑Fi local (TCP), sans limite de taille. Découverte automatique, QR code ou IP. |
+| **Liens & musique** | YouTube, YouTube Music, SoundCloud… → MP3, M4A, FLAC, WAV, OGG, OPUS, MP4 ; recherche ; liens directs. |
+| **Sauvegarder une appli** | APK (ou .apks) de n'importe quelle appli installée. |
+| **Réduire la taille** | Images, vidéos, audio optimisés, ou tout en ZIP. |
+| **Infos d'un fichier** | Détails, empreintes, comparer deux fichiers, compter les mots, contenu d'un ZIP, durée totale, EXIF complet avec lien carte. |
 
-L'accueil propose une **recherche d'outils**, des **favoris** (appui long) et les outils récents.
+### Convertir
+Convertir un fichier (vidéo, audio, image, PDF, Word, JSON/CSV/XML, archives) · XAPK → APK · Vidéo → images ·
+Vidéo → texte (TXT + SRT, hors connexion) · Photo → texte (OCR, + extraction des liens, e-mails, numéros) ·
+Texte → voix · **Unités & devises** (19 catégories dont cuisine, angle, puissance, débit internet, consommation ; 31 devises) ·
+**Nombres** (binaire/octal/hexa, chiffres romains, en toutes lettres, PGCD/PPCM, nombres premiers).
+
+### Modifier
+| Outil | Actions |
+|---|---|
+| **Vidéo** (34) | Couper, retirer le son, vitesse, pivoter, redimensionner, à l'envers, capture, changer la musique, fusionner, diaporama, **réduire le poids, extraire le MP3, GIF, recadrer (1:1, 9:16…), format TikTok/Reels avec fond flou, texte, logo, 9 filtres, flou/pixels, anti-grain, stabiliser, fondus, boomerang, boucle, accéléré/ralenti, retourner, images/s, monter le son, supprimer un passage, découper en morceaux, planche d'aperçus, audio + image → vidéo**. |
+| **Audio** (31) | Couper, volume, normaliser, vitesse, basses, karaoké, fondus, à l'envers, fusion, mono, **tonalité, nightcore, slowed + reverb, écho/réverb, son 8D, anti-bruit, voix podcast, supprimer les silences, aigus, égaliseur, sonnerie iPhone M4R, qualité MP3, découper, mélanger deux pistes, boucle, canaux G/D, silence au début, image de l'onde, spectrogramme, limiteur**. |
+| **Photo** (32) | Redimensionner, pivoter, N&B, carré, filigrane, supprimer EXIF/GPS, réduire le poids, collage, **changer de format, recadrer (16:9, 4:5…), taille exacte, 9 filtres, flou/pixels, netteté, vignette, coins arrondis, rond (profil), cadre, carré sans recadrer, découper en grille, mème, légende, date de prise, sticker WhatsApp, icônes d'appli, fond blanc, retourner, couleurs dominantes, ASCII, photos → GIF**. |
+| **PDF** (21) | Fusionner, extraire, séparer, pivoter, supprimer, protéger/déverrouiller, images → PDF, **réduire le poids, numéroter, filigrane, inverser, réorganiser, pages paires/impaires, recto/verso, page blanche, signer avec une image, pages → images, extraire le texte, infos, titre/auteur**. |
+| **Texte** | 50 transformations : casses (camelCase, snake_case, slug…), tris, doublons, Base64, URL, JSON lisible/compact, morse, binaire, hexa, ROT13, MD5/SHA-256, HTML, mots fréquents, somme des nombres… + rechercher/remplacer (regex), préfixe/suffixe, lorem ipsum, UUID. |
+| **QR codes** | Scanner, créer (texte, lien, Wi‑Fi, e-mail, téléphone, SMS). |
+
+### Calculer
+**Calculatrice** (parenthèses, %, puissances, racines, trigo, historique) · **Pourcentages** (x % de y, évolution, TVA HT/TTC, remises cumulées) ·
+**Argent** (pourboire et partage, crédit, épargne, brut → net, taux horaire) · **Dates** (écart, jours ouvrés, ajouter/retirer, âge, prochain anniversaire, semaine) ·
+**Santé** (IMC, calories, eau, zones cardio) · **Petits calculs** (trajet et carburant, prix au kilo, moyenne avec coefficients, recette, allure de course).
+
+### Au quotidien
+Chronomètre (tours), minuteur, Pomodoro · Bloc-notes · Liste à cocher · Compteurs · Hasard (dés, pile ou face, nombres, tirage, équipes) ·
+Mots de passe (générateur, phrase de passe, PIN, test de solidité) · Couleurs (HEX/RGB/HSL/CMJN, nuances, contraste) · Heure du monde (32 villes) · Dictaphone.
+
+### Téléphone
+Lampe torche (SOS, stroboscope, écran coloré) · Niveau à bulle et boussole · Sonomètre · Métronome et générateur de fréquence ·
+Mon téléphone (batterie, stockage, RAM, écran, capteurs) · Test d'écran (pixels morts, tactile, règle, dégradé) · Réglages.
 
 Tous les résultats sont enregistrés dans **Téléchargements/Fluxo**.
 

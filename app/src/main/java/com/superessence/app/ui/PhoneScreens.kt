@@ -252,7 +252,7 @@ fun SoundMeterScreen(onBack: () -> Unit) {
         withContext(Dispatchers.IO) {
             val rate = 44100
             val buf = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT).coerceAtLeast(4096)
-            @Suppress("MissingPermission")
+            @android.annotation.SuppressLint("MissingPermission")
             val rec = AudioRecord(MediaRecorder.AudioSource.MIC, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, buf)
             val data = ShortArray(buf / 2)
             try {
@@ -443,7 +443,7 @@ fun DeviceScreen(onBack: () -> Unit) {
     val density = LocalDensity.current
 
     ToolScaffold("Mon téléphone", onBack) {
-        val bat = remember(tick) { ctx.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) }
+        val bat = remember(tick) { ContextCompat.registerReceiver(ctx, null, IntentFilter(Intent.ACTION_BATTERY_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED) }
         Section("Batterie") {
             val level = bat?.let { it.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) * 100 / it.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1) } ?: -1
             val status = bat?.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
@@ -498,7 +498,8 @@ fun DeviceScreen(onBack: () -> Unit) {
             ResultRow("Taille utile", "${config.screenWidthDp} × ${config.screenHeightDp} dp")
             val inches = sqrt((dm.widthPixels / dm.xdpi).let { it * it } + (dm.heightPixels / dm.ydpi).let { it * it })
             ResultRow("Diagonale (env.)", fmt(inches.toDouble(), 1) + " pouces")
-            if (Build.VERSION.SDK_INT >= 30) ctx.display?.let { ResultRow("Fréquence", "${it.refreshRate.roundToInt()} Hz") }
+            val hz = if (Build.VERSION.SDK_INT >= 30) runCatching { ctx.display?.refreshRate }.getOrNull() else null
+            if (hz != null) ResultRow("Fréquence", "${hz.roundToInt()} Hz")
         }
         Section("Capteurs") {
             val sm = ctx.getSystemService(SensorManager::class.java)

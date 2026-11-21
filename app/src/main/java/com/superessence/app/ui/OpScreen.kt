@@ -45,6 +45,7 @@ fun OpScreen(title: String, group: String, intro: String, ops: List<Op>, onBack:
     val files = remember { mutableStateListOf<Uri>().apply { addAll(Shared.takePending()) } }
     var op by remember { mutableStateOf(ops.first()) }
     val values = remember { mutableStateMapOf<String, String>() }
+    var search by remember { mutableStateOf("") }
     val pick = rememberPicker(true) { p -> files.addAll(p.filter { it !in files }) }
 
     fun value(p: Param): String = values[p.key] ?: when (p) {
@@ -58,8 +59,19 @@ fun OpScreen(title: String, group: String, intro: String, ops: List<Op>, onBack:
             PickBox(if (files.isEmpty()) "Choisir des fichiers" else "Ajouter des fichiers", pick)
             if (files.isNotEmpty()) FileList(files) { files.remove(it) }
         }
-        Section("Action") {
-            ChoiceChips(ops, op, { it.label }) { op = it }
+        Section("Que veux-tu faire ?") {
+            if (ops.size > 10) {
+                OutlinedTextField(
+                    value = search,
+                    onValueChange = { search = it },
+                    placeholder = { Text("Chercher parmi les ${ops.size} actions") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            val shown = ops.filter { search.isBlank() || it.label.contains(search.trim(), true) || (it.note ?: "").contains(search.trim(), true) }
+            ChoiceChips(shown, op, { it.label }) { op = it }
+            if (shown.isEmpty()) Hint("Aucune action ne correspond.")
             op.note?.let { Hint(it) }
             op.params.forEach { p ->
                 when (p) {
